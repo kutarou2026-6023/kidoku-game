@@ -1,0 +1,1340 @@
+    <!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>既読スルー・プロット</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+        body { 
+            font-family: 'Noto Sans JP', sans-serif; 
+            background-color: #cbd5e1; 
+            overscroll-behavior-y: none; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        .meter-fill { transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .card-face-down { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+        .revealed { animation: flip 0.4s ease-in-out; }
+        @keyframes flip {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(90deg); }
+            100% { transform: rotateY(0deg); }
+        }
+        .carry-over-glow { box-shadow: 0 0 15px rgba(234, 179, 8, 0.6); animation: pulse-glow 2s infinite; }
+        @keyframes pulse-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-slate-300 min-h-[100vh] flex justify-center items-center overflow-x-hidden">
+
+    <div class="w-full max-w-md bg-slate-50 min-h-[100dvh] flex flex-col relative shadow-2xl overflow-hidden pb-6">
+        
+        <!-- ヘッダー -->
+        <header class="bg-white px-4 py-3 border-b border-gray-200 flex justify-between items-center z-10 shadow-sm relative">
+            <div class="flex flex-col">
+                <h1 class="text-lg font-black text-gray-800 tracking-tighter leading-none">既読スルー<span class="text-blue-600">・プロット</span></h1>
+                <span id="player-id-display" class="text-[9px] text-gray-400 font-mono tracking-widest mt-1">ID: -----</span>
+            </div>
+            <span id="phase-badge" class="bg-gray-400 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest">待機中</span>
+            
+            <!-- 開発用：エキスパートクリアのシミュレートボタン（正式実装まで残します） -->
+            <button onclick="debugWinExpert()" class="absolute top-14 right-2 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-md z-50 animate-bounce">
+                【テスト】エキスパートクリア
+            </button>
+        </header>
+
+        <!-- チュートリアル用のガイド指示板 -->
+        <div id="tutorial-guide" class="bg-green-500 text-white text-xs font-bold p-3 hidden shadow-md z-10 text-center flex flex-col gap-1 border-b border-green-600 transition-colors duration-300">
+            <span class="text-[9px] bg-black/20 text-white px-2 py-0.5 rounded-full mx-auto w-max font-black tracking-widest animate-pulse">TUTORIAL GUIDE</span>
+            <span id="tutorial-text" class="leading-relaxed mt-1">ここに指示が表示されます。</span>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            <!-- スコアボード -->
+            <div class="grid grid-cols-4 gap-2" id="score-board"></div>
+
+            <!-- メーター表示 -->
+            <div class="bg-white rounded-2xl shadow-sm p-4 border border-gray-200 relative">
+                <div id="pool-badge" class="absolute -top-3 -right-3 bg-yellow-400 text-yellow-900 font-black text-sm w-10 h-10 rounded-full flex items-center justify-center shadow-md border-2 border-white hidden carry-over-glow z-10">x2</div>
+                <div class="flex justify-between items-end mb-2">
+                    <div class="text-left">
+                        <span class="text-[9px] font-bold text-gray-400 block">決着ポイント</span>
+                        <span id="pool-points" class="text-lg font-black text-yellow-500">1 pt</span>
+                    </div>
+                    <div class="text-right">
+                        <span id="meter-value" class="text-4xl font-black text-gray-900 leading-none">0</span>
+                    </div>
+                </div>
+                <div class="relative h-8 w-full bg-gray-100 rounded-xl overflow-hidden shadow-inner">
+                    <div id="meter-bar" class="meter-fill h-full bg-gradient-to-r from-blue-500 to-indigo-600" style="width: 0%"></div>
+                    <div class="absolute inset-0 flex justify-between items-center px-3 pointer-events-none">
+                        <span class="text-[9px] font-bold text-gray-400">0</span>
+                        <div class="h-full w-0.5 bg-red-400 opacity-50 absolute transition-all duration-500" id="goal-marker" style="left: 50%;">
+                            <span class="absolute top-full left-1/2 -translate-x-1/2 text-[9px] text-red-500 font-black mt-0.5" id="goal-text">10 GOAL</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- テーブル（公開エリア） -->
+            <div id="table-area" class="grid grid-cols-4 gap-2"></div>
+
+            <!-- ログ -->
+            <div id="log" class="bg-gray-900 text-gray-300 p-3 rounded-xl h-24 overflow-y-auto text-[11px] font-mono shadow-inner border-t-2 border-blue-500 flex flex-col-reverse"></div>
+        </div>
+
+        <!-- アクションエリア（手札） -->
+        <div id="plot-area" class="px-3 pt-2 pb-safe bg-slate-50 border-t border-gray-200 opacity-50 pointer-events-none">
+            <div id="skip-option" class="mb-3 hidden text-center">
+                <button onclick="selectPlayerCard('SKIP')" class="w-full bg-green-500 text-white font-black py-3 rounded-xl active:scale-95 transition shadow-md animate-pulse text-sm">
+                    ✨ 今回はパス（未読スルー）する
+                </button>
+            </div>
+            <div id="hand-container" class="flex flex-wrap justify-center gap-1.5"></div>
+        </div>
+
+        <!-- 初期データ読み込み用ローディング画面（0.5秒で消えます） -->
+        <div id="loading-overlay" class="absolute inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 transition-opacity duration-500">
+            <div class="flex flex-col items-center gap-4">
+                <div class="relative w-16 h-16">
+                    <div class="absolute inset-0 border-4 border-cyan-100 rounded-full"></div>
+                    <div class="absolute inset-0 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <div class="text-center mt-2">
+                    <h3 class="text-base font-black text-slate-800 tracking-tight">セーブデータを読み込み中</h3>
+                    <p class="text-[10px] text-cyan-600 font-black mt-1 uppercase tracking-widest animate-pulse">Loading Profile...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ゲームモード選択画面（オーバーレイ） -->
+        <div id="mode-select-overlay" class="absolute inset-0 bg-white/95 z-40 flex flex-col items-center justify-start py-6 px-5 overflow-y-auto backdrop-blur-sm hidden">
+            
+            <!-- ランキングボタン (左上に配置) -->
+            <button onclick="openLeaderboard()" class="absolute top-4 left-4 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-3 py-2 rounded-full shadow-sm transition active:scale-95 flex items-center justify-center border border-yellow-200 z-50 text-[10px] font-black tracking-wider" title="世界ランキングを見る">
+                🏆 ランキング
+            </button>
+
+            <!-- リセットボタン (右上に配置) -->
+            <button onclick="openResetConfirmModal()" class="absolute top-4 right-4 bg-red-100 hover:bg-red-200 text-red-600 p-2 rounded-full shadow-sm transition active:scale-95 flex items-center justify-center border border-red-200 z-50" title="データを完全に初期化する">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+
+            <h2 class="text-2xl font-black text-gray-800 mb-1 mt-10">ゲームモード選択</h2>
+            <p class="text-xs text-gray-500 mb-4 text-center">遊び方を選択してください</p>
+
+            <!-- プロフィール編集カード（ID、ニックネーム表示） -->
+            <div class="w-full bg-slate-100 p-3 rounded-2xl mb-4 border border-slate-200 flex flex-col items-center">
+                <div class="flex items-center gap-2 mb-1 justify-center">
+                    <span id="player-profile-name" class="font-black text-slate-800 text-sm">プレイヤー</span>
+                    <span id="player-profile-id" class="text-xs text-gray-500 font-mono">#-----</span>
+                    <button onclick="openNicknameModal()" class="text-blue-500 hover:text-blue-700 transition active:scale-90" title="ニックネームを変更">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="text-[10px] text-slate-500 font-bold">
+                    累計スコア: <span id="player-profile-points" class="text-blue-600 font-black">0</span> pt
+                </div>
+            </div>
+
+            <div class="w-full space-y-3 pb-6">
+                <!-- 1. カジュアル -->
+                <button onclick="startGame('casual')" class="w-full bg-cyan-50 border-2 border-cyan-400 p-3.5 rounded-2xl shadow-sm active:scale-95 transition text-left relative overflow-visible">
+                    <span id="medal-casual" class="absolute -top-2.5 -right-1 text-2xl drop-shadow-md z-30"></span>
+                    <div class="flex items-start gap-3 mb-1">
+                        <span class="bg-cyan-100 text-cyan-600 text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">1</span>
+                        <div>
+                            <h3 class="text-sm font-black text-cyan-700 leading-tight">カジュアルモード</h3>
+                            <span class="inline-block font-black tracking-widest text-[8px] bg-cyan-100 text-cyan-600 px-1.5 py-0.5 rounded-full mt-1">初心者向け</span>
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-cyan-900/70 font-bold mt-1 leading-relaxed">特殊カードは親の「既読スルー」のみ。数値カードは無限に使えます。ゲームの基本に慣れるためのライトなモード。</p>
+                </button>
+
+                <!-- 2. ノーマル -->
+                <button onclick="startGame('normal')" class="w-full bg-white border-2 border-yellow-500 p-3.5 rounded-2xl shadow-sm active:scale-95 transition text-left relative overflow-visible">
+                    <span id="medal-normal" class="absolute -top-2.5 -right-1 text-2xl drop-shadow-md z-30"></span>
+                    <div class="flex items-start gap-3 mb-1">
+                        <span class="bg-yellow-100 text-yellow-600 text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">2</span>
+                        <div>
+                            <h3 class="text-sm font-black text-yellow-600 leading-tight">ノーマルモード</h3>
+                            <span class="inline-block font-black tracking-widest text-[8px] bg-yellow-100 text-yellow-600 px-1.5 py-0.5 rounded-full mt-1">中級者向け</span>
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-yellow-900/70 font-bold mt-1 leading-relaxed">最初から全てのカード(15枚)を持った状態でスタート。運に左右されず、戦略のみで勝敗を決めるモード。</p>
+                </button>
+
+                <!-- 3. エキスパート -->
+                <button onclick="startGame('expert')" class="w-full bg-red-50 border-2 border-red-500 p-3.5 rounded-2xl shadow-xl active:scale-95 transition text-left relative overflow-visible">
+                    <span id="medal-expert" class="absolute -top-2.5 -right-1 text-2xl drop-shadow-md z-30"></span>
+                    <div class="absolute -right-4 -top-4 text-4xl opacity-10">🃏</div>
+                    <div class="flex items-start gap-3 mb-1 relative z-10">
+                        <span class="bg-red-100 text-red-600 text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">3</span>
+                        <div>
+                            <h3 class="text-sm font-black text-red-600 leading-tight">エキスパートモード</h3>
+                            <span class="inline-block font-black tracking-widest text-[8px] bg-red-500 text-white px-1.5 py-0.5 rounded-full mt-1">上級者向け</span>
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-red-900/70 font-bold mt-1 relative z-10 leading-relaxed">初期手札9枚。カードを出したら山札から補充する麻雀式ルールに変更。運が絡む中どう立ち回るかが鍵となるモード。</p>
+                </button>
+
+                <!-- 4. マスター -->
+                <button id="btn-master" onclick="clickMasterMode()" class="w-full bg-slate-900 border-2 border-purple-500 p-3.5 rounded-2xl shadow-xl active:scale-95 transition text-left relative overflow-visible opacity-50">
+                    <span id="medal-master" class="absolute -top-2.5 -right-1 text-2xl drop-shadow-md z-30"></span>
+                    <div class="absolute -right-2 -top-2 text-4xl opacity-10">🔒</div>
+                    <div class="flex items-start gap-3 mb-1 relative z-10">
+                        <span id="master-lock-icon" class="bg-purple-600 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">🔒</span>
+                        <div>
+                            <h3 class="text-sm font-black text-purple-400 leading-tight flex items-center gap-1.5">
+                                マスターモード 
+                            </h3>
+                            <span id="master-tag" class="inline-block font-black tracking-widest text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-1">エキスパートモード1位獲得で解禁</span>
+                        </div>
+                    </div>
+                    <p id="master-desc" class="text-[9px] text-gray-500 font-bold mt-1 relative z-10 leading-relaxed">???</p>
+                </button>
+            </div>
+
+            <!-- チュートリアルボタン (緑基調) -->
+            <button onclick="startTutorial()" class="w-full bg-green-600 border-2 border-green-500 hover:bg-green-700 text-white p-4 rounded-2xl shadow-lg active:scale-95 transition text-center font-black text-sm flex items-center justify-center gap-2 relative overflow-visible">
+                <span id="medal-tutorial" class="absolute -top-3 -right-1 text-2xl drop-shadow-md z-30"></span>
+                <span>🍀</span> チュートリアルをプレイ（遊びながら学ぶ）
+            </button>
+        </div>
+
+        <!-- ニックネーム変更モーダル -->
+        <div id="nickname-modal" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-6 backdrop-blur-sm">
+            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl">
+                <h2 class="text-xl font-black mb-2 text-slate-800">ニックネーム変更</h2>
+                <p class="text-xs text-gray-500 mb-6 font-bold">全角・半角8文字以内で入力してください。</p>
+                <input type="text" id="nickname-input" class="w-full border-2 border-gray-300 rounded-xl p-3 text-center font-bold mb-6 text-sm" placeholder="プレイヤー" maxlength="8">
+                <div class="flex gap-2">
+                    <button onclick="closeNicknameModal()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3.5 rounded-xl text-sm transition active:scale-95">戻る</button>
+                    <button onclick="saveNickname()" class="flex-1 bg-blue-600 text-white font-bold py-3.5 rounded-xl text-sm transition active:scale-95 shadow-md shadow-blue-100">保存する</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- マスター解禁パスワードモーダル -->
+        <div id="password-modal" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-6 backdrop-blur-sm">
+            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl">
+                <h2 class="text-xl font-black mb-2 text-purple-700">マスターモード解禁</h2>
+                <p class="text-xs text-gray-500 mb-6 font-bold">エキスパートモードで1位を取るか、<br>解禁パスワードを入力してください。</p>
+                <input type="text" id="master-password-input" class="w-full border-2 border-gray-300 rounded-xl p-3 text-center font-bold mb-6 text-sm" placeholder="パスワードを入力">
+                <div class="flex gap-2">
+                    <button onclick="closePasswordModal()" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm">戻る</button>
+                    <button onclick="submitPassword()" class="flex-1 bg-purple-600 text-white font-bold py-3 rounded-xl text-sm">解禁する</button>
+                </div>
+                <p id="password-error" class="text-red-500 text-xs font-bold mt-3 hidden">❌ パスワードが違います</p>
+            </div>
+        </div>
+
+        <!-- 全データリセット確認モーダル -->
+        <div id="reset-confirm-modal" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-6 backdrop-blur-sm">
+            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-4 border-red-500">
+                <div class="text-red-500 text-6xl mb-3">⚠️</div>
+                <h2 class="text-xl font-black mb-2 text-red-600">データの初期化</h2>
+                <p class="text-xs text-slate-500 font-bold leading-relaxed mb-6">
+                    獲得したすべての【メダルバッジ】および【マスターモードの解禁状況】をリセットし、最初の状態に戻します。<br>
+                    <span class="text-red-500 text-[10px] block mt-2 font-black">※この操作は元に戻せません。本当に初期化しますか？</span>
+                </p>
+                <div class="flex gap-2">
+                    <button onclick="closeResetConfirmModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-slate-700 font-bold py-3.5 rounded-xl text-xs transition active:scale-95">
+                        キャンセル
+                    </button>
+                    <button onclick="executeAllDataReset()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl text-xs transition active:scale-95 shadow-md shadow-red-200">
+                        完全にリセットする
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- リーダーボード（ランキング）モーダル -->
+        <div id="leaderboard-modal" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-3xl p-5 max-w-sm w-full text-center shadow-2xl flex flex-col max-h-[85vh]">
+                <h2 class="text-2xl font-black mb-1 text-gray-800 tracking-tighter">🏆 世界ランキング</h2>
+                <p class="text-[10px] text-gray-500 mb-4 font-bold border-b border-gray-100 pb-2">全プレイヤーの「累計獲得ポイント」を競います</p>
+                
+                <div id="leaderboard-list" class="flex-1 overflow-y-auto mb-4 p-1 space-y-1.5 min-h-[50vh]">
+                    <!-- ランキングデータがここに挿入されます -->
+                </div>
+
+                <button onclick="closeLeaderboard()" class="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl text-sm transition active:scale-95 shadow-md">閉じる</button>
+            </div>
+        </div>
+
+        <!-- マスター解禁おめでとうポップアップ (結果モーダルの上に表示) -->
+        <div id="unlock-popup" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-[60] p-6 backdrop-blur-md transition-opacity">
+            <div class="bg-gradient-to-br from-purple-900 via-slate-900 to-indigo-900 border-2 border-purple-500 p-8 rounded-3xl text-white text-center shadow-2xl max-w-sm w-full relative overflow-hidden">
+                <div class="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIi8+CjxyZWN0IHg9IjQiIHk9IjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiLz4KPC9zdmc+')]"></div>
+                
+                <div class="relative z-10">
+                    <div class="text-6xl mb-4 drop-shadow-[0_0_15px_rgba(168,85,247,0.8)] animate-bounce">🔥</div>
+                    <h2 class="text-xl font-black text-yellow-300 mb-4 tracking-wider">限界を越えた者への招待</h2>
+                    <p class="text-xs text-purple-100 font-bold leading-relaxed mb-6">
+                        真の混沌（カオス）が幕を開ける――。<br>
+                        最難関『マスターモード』の封印が解かれました。
+                    </p>
+                    <div class="bg-black/60 py-3 px-4 rounded-xl border border-purple-700 mb-6 shadow-inner">
+                        <span class="text-[10px] text-purple-300 font-bold block mb-1">他端末用 解禁パスワード</span>
+                        <span class="text-lg font-black tracking-widest text-white drop-shadow-md">KIDOKU_M_2026</span>
+                    </div>
+                    <button onclick="closeUnlockPopup()" class="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white font-black py-4 rounded-xl active:scale-95 transition-all text-sm shadow-lg shadow-purple-500/50 border border-purple-300">
+                        確認して結果へ進む
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結果モーダル (z-50に配置) -->
+        <div id="modal" class="absolute inset-0 bg-black/70 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl">
+                <div id="modal-icon" class="text-5xl mb-2">🏆</div>
+                <h2 id="modal-title" class="text-2xl font-black mb-2 text-gray-800">タイトル</h2>
+                <!-- スマホの画面外に出ないように max-h-[55vh] overflow-y-auto を追加 -->
+                <div id="modal-body" class="text-gray-500 mb-6 font-medium whitespace-pre-wrap text-sm leading-relaxed text-left max-h-[55vh] overflow-y-auto"></div>
+                <button id="modal-btn" class="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl active:scale-95 transition-all text-sm">次のラウンド</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gameMode = 'normal'; 
+        let GOAL = 10;
+        let MAX_METER_UI = 20; 
+        let meter = 0;
+        let round = 1;
+        let scores = [0, 0, 0, 0];
+        let players = [];
+        let plots = [null, null, null, null]; 
+        let phase = 'WAITING'; 
+        let currentDealer = 0;
+        let poolPoints = 1;
+        let isBlockedNextTurn = [false, false, false, false];
+
+        // ユーザー固有データ（Local Storage管理）
+        let userShortId = "";
+        let userNickname = "プレイヤー";
+        let userTotalPoints = 0;
+
+        let highestRanks = { casual: null, normal: null, expert: null, master: null, tutorial: null };
+        let isMasterUnlocked = false;
+        let tutorialStep = 0;
+
+        const DECK_CASUAL = [1, 2, 3, 'C']; 
+        const DECK_NORMAL = [1,1,1,1, 2,2,2,2, 3,3,3,3, 0, 'M', 'C']; 
+        const DECK_EXPERT = [1,1, 2,2, 3,3, 0, 'M', 'C']; 
+        const DECK_MASTER = [1,1, 2,2, 3,3, 0, 'M', 'C', 'U', 'B']; 
+        const DECK_TUTORIAL = [1, 2, 3, 'C']; 
+
+        const UNLOCK_PASSWORD = "KIDOKU_M_2026";
+
+        // ★★★ 提供されたGoogle Apps Script (GAS) のURL ★★★
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwJMcQpf5PXZbhV-VcRfYVw7GzslX_gbPO6t1TGSVilRGXVvUqryn65v9aAC88-2RtjQQ/exec";
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initLocalData();
+            
+            // 0.5秒だけローディング画面を見せてからモード選択画面へ
+            setTimeout(() => {
+                const loading = document.getElementById('loading-overlay');
+                loading.classList.add('opacity-0');
+                setTimeout(() => {
+                    loading.classList.add('hidden');
+                    document.getElementById('mode-select-overlay').classList.remove('hidden');
+                }, 500); 
+            }, 500);
+        });
+
+        // ==========================================
+        // ローカルデータ管理 (LocalStorage)
+        // ==========================================
+        function initLocalData() {
+            // プロフィールの読み込み・作成
+            const savedProfile = localStorage.getItem('kidoku_profile_2026');
+            if (savedProfile) {
+                const p = JSON.parse(savedProfile);
+                userShortId = p.id;
+                userNickname = p.name;
+                userTotalPoints = p.points;
+            } else {
+                userShortId = Math.floor(10000 + Math.random() * 90000).toString();
+                userNickname = "プレイヤー";
+                userTotalPoints = 0;
+                saveProfileData();
+            }
+
+            // メダルとマスターロックの読み込み
+            if (localStorage.getItem('master_unlocked_2026') === 'true') {
+                isMasterUnlocked = true;
+            }
+            const storedRanks = localStorage.getItem('highest_ranks_2026');
+            if (storedRanks) {
+                highestRanks = { ...highestRanks, ...JSON.parse(storedRanks) };
+            }
+
+            updateProfileUI();
+            checkMasterLockState();
+            renderMedalIcons();
+        }
+
+        function saveProfileData() {
+            const data = { id: userShortId, name: userNickname, points: userTotalPoints };
+            localStorage.setItem('kidoku_profile_2026', JSON.stringify(data));
+        }
+
+        function updateProfileUI() {
+            document.getElementById('player-id-display').innerText = `ID: ${userShortId}`;
+            document.getElementById('player-profile-name').innerText = userNickname;
+            document.getElementById('player-profile-id').innerText = `#${userShortId}`;
+            document.getElementById('player-profile-points').innerText = userTotalPoints;
+        }
+
+        // ==========================================
+        // GAS (Googleスプレッドシート) 連携処理
+        // ==========================================
+        
+        // 1. スコアを送信する (非同期で裏側で実行)
+        function sendScoreToGAS() {
+            if (!GAS_URL || userTotalPoints === 0) return;
+            
+            // "たろう#12345" の形式で送信
+            const postData = {
+                name: `${userNickname}#${userShortId}`,
+                score: userTotalPoints
+            };
+
+            // CORSエラーを回避するため、"text/plain" で投げるのがGASの鉄則
+            fetch(GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(postData)
+            }).then(response => {
+                if (!response.ok) {
+                    console.warn("GAS通信エラー: HTTP status " + response.status);
+                }
+            }).catch(e => {
+                console.warn("GAS通信エラー (CORSやアクセス権限の可能性があります):", e);
+            });
+        }
+
+        // ランキングリストのレンダリング処理（共通化）
+        function renderLeaderboardData(data, listEl) {
+            // 同じ名前("名前#ID")の人が何度も送信している可能性があるため、最も高いスコアのものだけを抽出
+            const uniquePlayers = {};
+            data.forEach(p => {
+                if (p.name && typeof p.score === 'number') {
+                    if (!uniquePlayers[p.name] || uniquePlayers[p.name].score < p.score) {
+                        uniquePlayers[p.name] = p;
+                    }
+                }
+            });
+
+            // スコアの降順（高い順）にソート
+            const sortedPlayers = Object.values(uniquePlayers).sort((a, b) => b.score - a.score);
+            
+            let html = '';
+            sortedPlayers.slice(0, 50).forEach((p, index) => {
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `<span class="text-gray-400">${index + 1}</span>`;
+                const isMe = p.name === `${userNickname}#${userShortId}`;
+                
+                // "名前#ID" を分割して綺麗に表示
+                const nameParts = p.name.split('#');
+                const displayName = nameParts[0] || "不明";
+                const displayId = nameParts[1] ? `#${nameParts[1]}` : "";
+                
+                html += `
+                    <div class="flex justify-between items-center p-3 border-b border-gray-100 ${isMe ? 'bg-yellow-50 rounded-lg border border-yellow-200 shadow-sm' : ''}">
+                        <div class="flex items-center gap-3 overflow-hidden mr-2">
+                            <span class="w-6 text-center text-sm font-black flex-shrink-0">${medal}</span>
+                            <span class="text-xs font-black truncate ${isMe ? 'text-yellow-700' : 'text-gray-700'}" title="${p.name}">
+                                ${displayName}<span class="text-gray-400 font-normal">${displayId}</span>
+                                ${isMe ? '<span class="text-[8px] bg-yellow-400 text-yellow-900 px-1 py-0.5 rounded ml-1 flex-shrink-0 font-black">YOU</span>' : ''}
+                            </span>
+                        </div>
+                        <span class="font-black text-blue-600 text-sm flex-shrink-0">${p.score} <span class="text-[9px] text-gray-400 font-normal">pt</span></span>
+                    </div>
+                `;
+            });
+            
+            if (sortedPlayers.length === 0) html = '<div class="text-center py-10 text-gray-500 text-xs font-bold">まだランキングデータがありません</div>';
+            
+            listEl.innerHTML = html;
+        }
+
+        // 2. ランキングを取得して表示する
+        async function openLeaderboard() {
+            document.getElementById('leaderboard-modal').classList.remove('hidden');
+            const listEl = document.getElementById('leaderboard-list');
+            listEl.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold animate-pulse text-xs">ランキングを取得中...</div>';
+
+            try {
+                // GASからデータ取得
+                const response = await fetch(GAS_URL);
+                if (!response.ok) {
+                    throw new Error("HTTP Status: " + response.status);
+                }
+                const data = await response.json();
+                renderLeaderboardData(data, listEl);
+
+            } catch (e) {
+                console.error("Leaderboard fetch error:", e);
+                
+                // フォールバック用のダミーデータ（エラー時にUIを確認できるようにするため）
+                const dummyData = [
+                    { name: "テストプレイヤー#99999", score: 15 },
+                    { name: `${userNickname}#${userShortId}`, score: userTotalPoints },
+                    { name: "CPUマスター#12345", score: 12 },
+                    { name: "初心者#54321", score: 3 }
+                ];
+                renderLeaderboardData(dummyData, listEl);
+                
+                // エラーメッセージを上部に追加
+                const errorMsg = document.createElement('div');
+                errorMsg.className = "bg-red-50 text-red-600 text-[10px] font-bold p-3 mb-3 rounded-lg border border-red-200 shadow-sm text-left";
+                errorMsg.innerHTML = "⚠️ <b>通信エラーが発生しました</b><br>GASのURLが無効か、アクセス権限が不足しています。代わりにダミーデータを表示しています。<br><br>【修正方法】GASの「新しいデプロイ」設定で<b>「アクセスできるユーザー」を「全員」</b>にして再デプロイしてください。";
+                listEl.prepend(errorMsg);
+            }
+        }
+
+        function closeLeaderboard() {
+            document.getElementById('leaderboard-modal').classList.add('hidden');
+        }
+
+        // ==========================================
+        // ニックネーム編集モーダル制御
+        // ==========================================
+        function openNicknameModal() {
+            document.getElementById('nickname-input').value = userNickname;
+            document.getElementById('nickname-modal').classList.remove('hidden');
+        }
+
+        function closeNicknameModal() {
+            document.getElementById('nickname-modal').classList.add('hidden');
+        }
+
+        function saveNickname() {
+            let inputName = document.getElementById('nickname-input').value.trim();
+            if (inputName.length === 0) {
+                alert("❌ ニックネームを入力してください。");
+                return;
+            }
+            if (inputName.length > 8) {
+                alert("❌ ニックネームは8文字以内で入力してください。");
+                return;
+            }
+            userNickname = inputName;
+            
+            saveProfileData();
+            updateProfileUI();
+            
+            // ニックネームが変わったので最新スコアでスプレッドシートに送信し直す
+            if (userTotalPoints > 0) {
+                sendScoreToGAS();
+            }
+
+            closeNicknameModal();
+        }
+
+        // ==========================================
+        // その他のシステム管理（リセット・UI更新など）
+        // ==========================================
+        function openResetConfirmModal() {
+            document.getElementById('reset-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeResetConfirmModal() {
+            document.getElementById('reset-confirm-modal').classList.add('hidden');
+        }
+
+        function executeAllDataReset() {
+            isMasterUnlocked = false;
+            highestRanks = { casual: null, normal: null, expert: null, master: null, tutorial: null };
+            userTotalPoints = 0;
+            userNickname = "プレイヤー";
+            // IDは維持する
+
+            localStorage.removeItem('master_unlocked_2026');
+            localStorage.removeItem('highest_ranks_2026');
+            saveProfileData();
+
+            checkMasterLockState();
+            renderMedalIcons();
+            updateProfileUI();
+            closeResetConfirmModal();
+
+            alert("🔄 すべてのローカルデータが正常に初期化されました。");
+        }
+
+        function renderMedalIcons() {
+            const medals = { 1: "🥇", 2: "🥈", 3: "🥉", 4: "⚪" };
+            ['casual', 'normal', 'expert', 'master', 'tutorial'].forEach(mode => {
+                const el = document.getElementById(`medal-${mode}`);
+                if (el) {
+                    const rank = highestRanks[mode];
+                    el.innerText = rank ? medals[rank] : "";
+                }
+            });
+        }
+
+        function checkMasterLockState() {
+            const btn = document.getElementById('btn-master');
+            const icon = document.getElementById('master-lock-icon');
+            const tag = document.getElementById('master-tag');
+            const desc = document.getElementById('master-desc');
+            
+            if (isMasterUnlocked) {
+                btn.classList.remove('opacity-50');
+                icon.innerText = "4"; 
+                icon.className = "bg-purple-600 text-white text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
+                tag.innerText = "超上級者向け";
+                tag.className = "inline-block font-black tracking-widest text-[8px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full mt-1";
+                desc.innerText = "初期手札11枚。従来の特殊カードに2種類の新カードが追加された、すべてを読み切る者だけのカオスルール。";
+                desc.className = "text-[9px] text-gray-300 font-bold mt-1 relative z-10 leading-relaxed";
+            } else {
+                btn.classList.add('opacity-50');
+                icon.innerText = "🔒";
+                icon.className = "bg-purple-600 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
+                tag.innerText = "エキスパートモード1位獲得で解禁";
+                tag.className = "inline-block font-black tracking-widest text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-1";
+                desc.innerText = "???";
+                desc.className = "text-[9px] text-gray-500 font-bold mt-1 relative z-10 leading-relaxed";
+            }
+        }
+
+        function clickMasterMode() {
+            if (isMasterUnlocked) {
+                startGame('master');
+            } else {
+                document.getElementById('password-modal').classList.remove('hidden');
+                document.getElementById('password-error').classList.add('hidden');
+                document.getElementById('master-password-input').value = "";
+            }
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+        }
+
+        function submitPassword() {
+            const pass = document.getElementById('master-password-input').value;
+            if (pass === UNLOCK_PASSWORD) {
+                isMasterUnlocked = true;
+                localStorage.setItem('master_unlocked_2026', 'true');
+                closePasswordModal();
+                checkMasterLockState();
+                startGame('master');
+            } else {
+                document.getElementById('password-error').classList.remove('hidden');
+            }
+        }
+
+        function closeUnlockPopup() {
+            document.getElementById('unlock-popup').classList.add('hidden');
+        }
+
+        // ==========================================
+        // 開発用デバッグ関数
+        // ==========================================
+        function debugWinExpert() {
+            gameMode = 'expert';
+            scores = [4, 0, 0, 0];
+            players = [
+                { id: 0, name: "あなた", score: 4 },
+                { id: 1, name: "CPU 1", score: 0 },
+                { id: 2, name: "CPU 2", score: 0 },
+                { id: 3, name: "CPU 3", score: 0 }
+            ];
+            
+            document.getElementById('loading-overlay').classList.add('hidden');
+            document.getElementById('mode-select-overlay').classList.add('hidden');
+            document.getElementById('password-modal').classList.add('hidden');
+            document.getElementById('reset-confirm-modal').classList.add('hidden');
+            document.getElementById('modal').classList.add('hidden');
+            document.getElementById('leaderboard-modal').classList.add('hidden');
+            
+            showFinalResult();
+        }
+
+        // ==========================================
+        // ゲームロジック (チュートリアル＆進行)
+        // ==========================================
+        function startGame(mode) {
+            gameMode = mode;
+            document.getElementById('mode-select-overlay').classList.add('hidden');
+            document.getElementById('plot-area').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('tutorial-guide').classList.add('hidden');
+
+            let initialDeck;
+            if (gameMode === 'casual') initialDeck = [...DECK_CASUAL];
+            else if (gameMode === 'normal') initialDeck = [...DECK_NORMAL];
+            else if (gameMode === 'expert') initialDeck = [...DECK_EXPERT];
+            else if (gameMode === 'master') initialDeck = [...DECK_MASTER];
+            else if (gameMode === 'tutorial') initialDeck = [...DECK_TUTORIAL];
+
+            players = [
+                { id: 0, name: "あなた", isCPU: false, cards: [...initialDeck], suberi: false, isDealer: false, canSkip: false },
+                { id: 1, name: "CPU 1", isCPU: true, cards: [...initialDeck], suberi: false, isDealer: false, canSkip: false },
+                { id: 2, name: "CPU 2", isCPU: true, cards: [...initialDeck], suberi: false, isDealer: false, canSkip: false },
+                { id: 3, name: "CPU 3", isCPU: true, cards: [...initialDeck], suberi: false, isDealer: false, canSkip: false }
+            ];
+            
+            if (gameMode === 'tutorial') {
+                currentDealer = 0; 
+            } else {
+                currentDealer = Math.floor(Math.random() * 4);
+            }
+
+            round = 1;
+            scores = [0, 0, 0, 0];
+
+            let modeNames = { casual: 'カジュアル', normal: 'ノーマル', expert: 'エキスパート', master: 'マスター', tutorial: 'チュートリアル' };
+            addLog(`> ${modeNames[gameMode]}モードでゲームを開始します。`);
+            startNewRound();
+        }
+
+        function startNewRound() {
+            meter = 0;
+            phase = 'PLOT';
+            plots = [null, null, null, null];
+            GOAL = 10;
+            MAX_METER_UI = 20;
+            poolPoints = 1;
+            isBlockedNextTurn = [false, false, false, false];
+            
+            players.forEach((p, i) => {
+                p.suberi = false;
+                p.isDealer = (i === currentDealer);
+                p.canSkip = false;
+            });
+            
+            if (gameMode === 'tutorial') {
+                setupTutorialStep();
+            } else {
+                players.forEach((p, i) => { if(p.isCPU) plots[i] = cpuStrategy(i); });
+            }
+
+            updateUI();
+            if (gameMode !== 'tutorial') {
+                addLog(`【R${round}】親は${players[currentDealer].name}。カードを選択！`);
+            }
+        }
+
+        function setupTutorialStep() {
+            document.getElementById('tutorial-guide').classList.remove('hidden');
+            
+            if (tutorialStep === 0) {
+                document.getElementById('tutorial-text').innerText = "【第1試合：基本ルール】メーターを「10」ジャストにする練習です。あなたは親です。まずは数値カード「+3」を出しましょう。";
+                plots[1] = players[1].cards.indexOf(2); 
+                plots[2] = players[2].cards.indexOf(2); 
+                plots[3] = players[3].cards.indexOf(2); 
+            } else if (tutorialStep === 1) {
+                document.getElementById('tutorial-text').innerText = "現在メーターは「9」！ここで大きな数字を出すとオーバーして自滅します。「+1」を出して10ちょうどを狙いましょう！";
+                plots[1] = players[1].cards.indexOf(2); 
+                plots[2] = players[2].cards.indexOf(2); 
+                plots[3] = players[3].cards.indexOf(2); 
+            } else if (tutorialStep === 2) {
+                document.getElementById('tutorial-text').innerText = "【第2試合：応用ルール】あなたは親(👑)です。炎上を回避する必殺技を学びます。まずは「+3」を出してメーターを上げましょう。";
+                plots[1] = players[1].cards.indexOf(2); 
+                plots[2] = players[2].cards.indexOf(2); 
+                plots[3] = players[3].cards.indexOf(2); 
+            } else if (tutorialStep === 3) {
+                document.getElementById('tutorial-text').innerText = "メーターは「9」！次に誰かが数字を出すと誰かがスベります。親限定の必殺技「既読スルー(C)」を出して決着を無効化しましょう！";
+                plots[1] = players[1].cards.indexOf(1); 
+                plots[2] = players[2].cards.indexOf(3); 
+                plots[3] = players[3].cards.indexOf(3); 
+            } else if (tutorialStep === 4) {
+                meter = 19; 
+                document.getElementById('tutorial-text').innerText = "既読スルー成功！\n決着が無効化され、ゴールが「20」に延長されました！\n最後に「+1」を出して20ジャストで勝利しましょう！";
+                
+                players[0].cards = [1, 2, 3, 'C'];
+                updateUI(); 
+
+                plots[1] = 0; 
+                plots[2] = 0; 
+                plots[3] = 0; 
+            }
+        }
+
+        function showTutorialWarning(msg) {
+            const guide = document.getElementById('tutorial-guide');
+            const text = document.getElementById('tutorial-text');
+            const originalText = text.innerText;
+            guide.classList.replace('bg-green-500', 'bg-red-500');
+            guide.classList.replace('border-green-600', 'border-red-600');
+            text.innerText = msg;
+            setTimeout(() => {
+                guide.classList.replace('bg-red-500', 'bg-green-500');
+                guide.classList.replace('border-red-600', 'border-green-600');
+                text.innerText = originalText;
+            }, 2000);
+        }
+
+        function cpuStrategy(idx) {
+            if (isBlockedNextTurn[idx]) return 'BLOCKED';
+            const p = players[idx];
+            const diff = GOAL - meter;
+
+            if (gameMode === 'casual') {
+                const safeCards = p.cards.map((c, i) => ({c, i})).filter(o => o.c !== 'C');
+                if (Math.random() < 0.3 && p.isDealer && p.cards.includes('C')) return p.cards.indexOf('C');
+                return safeCards[Math.floor(Math.random() * safeCards.length)].i;
+            }
+
+            if (gameMode === 'normal') {
+                if(p.canSkip && diff <= 3 && Math.random() < 0.8) return 'SKIP';
+                if(p.isDealer && p.cards.includes('C') && meter > 0 && meter >= 7 && Math.random() < 0.6) return p.cards.indexOf('C');
+                const winCard = p.cards.findIndex(c => typeof c === 'number' && c !== 0 && (meter + c === GOAL));
+                if(winCard !== -1) return winCard;
+                const safeCards = p.cards.map((c, i) => ({c, i})).filter(o => o.c === 0 || o.c === 'C' || o.c === 'M' || (meter + o.c < GOAL));
+                if(safeCards.length > 0) return safeCards[Math.floor(Math.random() * safeCards.length)].i;
+                return 0; 
+            }
+
+            const winCardIdx = p.cards.findIndex(c => typeof c === 'number' && c !== 0 && (meter + c === GOAL));
+            if (winCardIdx !== -1) return winCardIdx;
+
+            if (p.isDealer && p.cards.includes('C') && meter > 0 && diff <= 3 && Math.random() < 0.9) return p.cards.indexOf('C');
+
+            if (diff <= 3) {
+                if (p.canSkip) return 'SKIP'; 
+                if (p.cards.includes('U') && Math.random() < 0.8) return p.cards.indexOf('U'); 
+                if (p.cards.includes(0) && Math.random() < 0.8) return p.cards.indexOf(0); 
+                if (p.cards.includes('B') && Math.random() < 0.8) return p.cards.indexOf('B'); 
+            }
+
+            if (meter >= 4 && diff >= 4) {
+                if (p.cards.includes('M') && !p.canSkip && Math.random() < 0.7) return p.cards.indexOf('M');
+                let nextP = (idx + 1) % 4;
+                if (p.cards.includes('B') && players[nextP].isDealer && Math.random() < 0.7) return p.cards.indexOf('B');
+            }
+
+            let playableCards = p.cards.map((c, i) => ({c, i})).filter(o => {
+                if (typeof o.c === 'number' && o.c !== 0) return meter + o.c < GOAL;
+                if (o.c === 0 || o.c === 'B') return true; 
+                if (o.c === 'M') return !p.canSkip; 
+                if (o.c === 'U') return meter > 3; 
+                return false; 
+            });
+
+            if (playableCards.length > 0) {
+                let numCards = playableCards.filter(o => typeof o.c === 'number' && o.c !== 0);
+                if (numCards.length > 0 && Math.random() < 0.8) {
+                    numCards.sort((a, b) => b.c - a.c); 
+                    return numCards[0].i;
+                }
+                return playableCards[Math.floor(Math.random() * playableCards.length)].i;
+            }
+
+            if (p.cards.includes('C') && (!p.isDealer || meter > 0)) return p.cards.indexOf('C'); 
+            if (p.cards.includes('M')) return p.cards.indexOf('M'); 
+            if (p.cards.includes(0)) return p.cards.indexOf(0);
+            if (p.cards.includes('U')) return p.cards.indexOf('U');
+            if (p.cards.includes('B')) return p.cards.indexOf('B');
+
+            let nums = p.cards.map((c, i) => ({c, i})).filter(o => typeof o.c === 'number' && o.c !== 0).sort((a, b) => a.c - b.c);
+            if (nums.length > 0) return nums[0].i;
+
+            return 0; 
+        }
+
+        function selectPlayerCard(selection) {
+            if(phase !== 'PLOT') return;
+
+            if (gameMode === 'tutorial') {
+                const selectedCardVal = players[0].cards[selection];
+                if (tutorialStep === 0 && selectedCardVal !== 3) {
+                    showTutorialWarning("💡 指示通り「+3」のカードを出してください。");
+                    return;
+                }
+                if (tutorialStep === 1 && selectedCardVal !== 1) {
+                    showTutorialWarning("💡 指示通り「+1」を出してください。");
+                    return;
+                }
+                if (tutorialStep === 2 && selectedCardVal !== 3) {
+                    showTutorialWarning("💡 指示通り「+3」のカードを出してください。");
+                    return;
+                }
+                if (tutorialStep === 3 && selectedCardVal !== 'C') {
+                    showTutorialWarning("💡 指示通り「既読スルー(C)」を出してください。");
+                    return;
+                }
+                if (tutorialStep === 4 && selectedCardVal !== 1) {
+                    showTutorialWarning("💡 指示通り「+1」を出してください。");
+                    return;
+                }
+            }
+
+            plots[0] = selection; 
+            phase = 'REVEAL';
+            processReveal();
+        }
+
+        function drawCardFromDeck() {
+            return Math.floor(Math.random() * 3) + 1;
+        }
+
+        async function processReveal() {
+            updateUI();
+            
+            let order = [];
+            for(let i=0; i<4; i++) order.push((currentDealer + i) % 4);
+
+            let isMutedNext = false;
+            let turnResult = null; 
+
+            const dealerPlot = plots[currentDealer];
+            let isDealerCarryOver = false;
+            if(dealerPlot !== 'SKIP' && dealerPlot !== 'BLOCKED') {
+                isDealerCarryOver = (players[currentDealer].cards[dealerPlot] === 'C');
+            }
+
+            let lastValidPlayer = -1;
+            let previousNumericValue = 0;
+            let previousPlayerIdx = -1;
+
+            for(let idx of order) {
+                const p = players[idx];
+                const selection = plots[idx];
+                
+                let cardValue;
+                let isSkipping = false;
+                let isBlocked = false;
+
+                if (selection === 'BLOCKED') {
+                    isBlocked = true;
+                    isBlockedNextTurn[idx] = false; 
+                    cardValue = 'BLOCKED';
+                } else if (selection === 'SKIP') {
+                    isSkipping = true;
+                    p.canSkip = false;
+                    cardValue = 'SKIP';
+                } else {
+                    cardValue = p.cards[selection];
+                    
+                    if ((gameMode === 'casual' || gameMode === 'tutorial') && typeof cardValue === 'number' && cardValue !== 0) {
+                        // 無限使用
+                    } else {
+                        p.cards.splice(selection, 1); 
+                    }
+                }
+                
+                await new Promise(r => setTimeout(r, 700)); 
+                
+                let actualChange = 0;
+                let logMsg = "";
+
+                if (isBlocked) {
+                    logMsg = `🛑 ${p.name} はブロックされており行動不可！(+0)`;
+                } else if (isSkipping) {
+                    logMsg = `🛌 ${p.name} は未読スルーでパス！（+0）`;
+                } else if(isMutedNext) {
+                    actualChange = 0;
+                    isMutedNext = false;
+                    logMsg = `🔕 ${p.name} は通知オフされた (+0)`; 
+                } else if(cardValue === 'C') { 
+                    if(idx === currentDealer) {
+                        logMsg = `⚠️ ${p.name}(親)が既読スルー！全員公開後に判定`;
+                    } else {
+                        logMsg = `${p.name} が既読スルー（子のためパス +0）`;
+                    }
+                } else if(cardValue === 0) { 
+                    isMutedNext = true;
+                    logMsg = `🚫 ${p.name} が通知オフ！次を無効化。`;
+                } else if(cardValue === 'M') {
+                    p.canSkip = true; 
+                    logMsg = `📱 ${p.name} が未読スルー！次回パス権獲得。`;
+                } else if(cardValue === 'U') {
+                    if (previousPlayerIdx !== -1 && previousNumericValue > 0) {
+                        meter -= previousNumericValue;
+                        logMsg = `↩️ ${p.name} が送信取消！ ${players[previousPlayerIdx].name} の +${previousNumericValue} を無効化！ (計: ${meter})`;
+                    } else {
+                        logMsg = `↩️ ${p.name} が送信取消… だが対象がなくパス！ (+0)`;
+                    }
+                } else if(cardValue === 'B') {
+                    let nextP = (idx + 1) % 4;
+                    isBlockedNextTurn[nextP] = true;
+                    logMsg = `🧱 ${p.name} がブロック！次ターン ${players[nextP].name} の行動を封印！`;
+                } else {
+                    actualChange = cardValue;
+                    meter += actualChange;
+                    logMsg = `${p.name} が +${actualChange}。 (計: ${meter})`;
+                }
+
+                if ((gameMode === 'expert' || gameMode === 'master') && !isSkipping && !isBlocked) {
+                    const newCard = drawCardFromDeck();
+                    p.cards.push(newCard); 
+                }
+
+                addLog(logMsg);
+                updateUI(idx, cardValue);
+
+                if (!isDealerCarryOver && meter >= GOAL) {
+                    if (meter === GOAL) turnResult = { type: 'WIN', player: idx };
+                    else turnResult = { type: 'SUBERI', player: idx, lastValid: lastValidPlayer };
+                    p.suberi = (meter > GOAL);
+                    break; 
+                }
+
+                if (!isSkipping && !isBlocked) {
+                    previousPlayerIdx = idx;
+                    if (typeof cardValue === 'number' && cardValue !== 0 && !isMutedNext) {
+                        previousNumericValue = cardValue;
+                    } else {
+                        previousNumericValue = 0;
+                    }
+                }
+
+                lastValidPlayer = idx;
+            }
+
+            await new Promise(r => setTimeout(r, 800));
+
+            if (isDealerCarryOver) {
+                if (meter >= GOAL) {
+                    addLog("🔥 親の既読スルー成功！決着無効。親に+1pt。");
+                    scores[currentDealer] += 1;
+                    GOAL = 20;
+                    MAX_METER_UI = 25; 
+                    poolPoints = 2; 
+                    players.forEach(p => p.suberi = false);
+                    
+                    phase = 'PLOT'; 
+                    plots = [null, null, null, null]; 
+
+                    if (gameMode === 'tutorial') {
+                        tutorialStep = 4; 
+                        setupTutorialStep();
+                    } else {
+                        players.forEach((p, i) => { if(p.isCPU) plots[i] = cpuStrategy(i); });
+                    }
+                    updateUI();
+                } else {
+                    scores.forEach((_, i) => { if (i !== currentDealer) scores[i] += 1; });
+                    showModal("👀 既読スルー 不発", `最終的に誰もGOAL(${GOAL})に届かず！\nペナルティ：親以外全員に1ポイント入りラウンド終了！`, "🤦");
+                }
+            } else if (turnResult) {
+                finalizeResult(turnResult);
+            } else {
+                addLog("誰もGOALに届きませんでした。次を選択してください。");
+                phase = 'PLOT';
+                plots = [null, null, null, null];
+                
+                if (gameMode === 'tutorial') {
+                    if (tutorialStep === 0) {
+                        tutorialStep = 1; 
+                        setupTutorialStep();
+                    } else if (tutorialStep === 2) {
+                        tutorialStep = 3;
+                        setupTutorialStep();
+                    }
+                } else {
+                    players.forEach((p, i) => { if(p.isCPU) plots[i] = cpuStrategy(i); });
+                }
+                updateUI();
+            }
+        }
+
+        function finalizeResult(res) {
+            if (gameMode === 'tutorial') {
+                if (tutorialStep === 1 && res.type === 'WIN') {
+                    tutorialStep = 2; 
+                    document.getElementById('modal-btn').innerText = "次へ進む";
+                    showModal("🎯 1試合目クリア！", "お見事！10ちょうどでGOAL達成です。<br>次の試合では親(👑)になり、応用ルールである『既読スルー（必殺技）』を使ってみましょう！", "✨");
+                    return;
+                }
+                if (tutorialStep === 4 && res.type === 'WIN') {
+                    highestRanks.tutorial = 1;
+                    localStorage.setItem('highest_ranks_2026', JSON.stringify(highestRanks));
+                    renderMedalIcons();
+
+                    document.getElementById('modal-btn').innerText = "モード選択に戻る";
+                    showModal("🎉 チュートリアル完全クリア！", "おめでとうございます！これで全基本ルールをマスターしました！\n\n【💡 既読スルー(親)の成功効果】\n① 10点到達をなかったことにする\n② 成功ボーナスとして「自分に1ポイント」入る\n③ ゴールが20に延長され、以降の勝利ポイントが「2倍(2pt)」になる\n\n他のモードを選択して実際の勝負に挑戦してみましょう！", "🏆");
+                    return;
+                }
+            }
+
+            document.getElementById('modal-btn').innerText = "次のラウンド";
+            if(res.type === 'WIN') {
+                scores[res.player] += poolPoints;
+                showModal("🎯 GOAL達成！", `${players[res.player].name} がジャスト達成！\n${poolPoints} ポイント獲得！`, "🏆");
+            } else {
+                if(res.lastValid !== -1) {
+                    scores[res.lastValid] += poolPoints;
+                    showModal("⛸️ スベった！", `${players[res.player].name} がオーバー！\n直前の ${players[res.lastValid].name} が ${poolPoints} ポイント獲得！`, "💥");
+                } else {
+                    showModal("⛸️ スベった！", `${players[res.player].name} がいきなりスベりました。\n傷つきながら誰もポイントを得られませんでした。`, "😅");
+                }
+            }
+        }
+
+        function updateUI(revealingIdx = -1, revealedVal = null) {
+            if (phase === 'WAITING') return;
+
+            const sb = document.getElementById('score-board');
+            sb.innerHTML = scores.map((s, i) => `
+                <div class="bg-white py-1 rounded-lg shadow-sm border ${players[i].isDealer ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200'} text-center flex flex-col justify-center">
+                    <div class="text-[8px] font-bold ${players[i].isDealer ? 'text-yellow-600' : 'text-gray-400'} truncate px-1">${players[i].name} ${players[i].isDealer ? '👑' : ''}</div>
+                    <div class="text-base font-black ${i===0?'text-blue-600':'text-gray-800'}">${s}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('meter-value').innerText = meter;
+            document.getElementById('meter-bar').style.width = Math.min(100, (meter / MAX_METER_UI) * 100) + '%';
+            
+            const goalPercent = (GOAL / MAX_METER_UI) * 100;
+            document.getElementById('goal-marker').style.left = `${goalPercent}%`;
+            document.getElementById('goal-text').innerText = `${GOAL} GOAL`;
+            
+            let modeText = 'ノーマル';
+            let badgeClass = "text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest ";
+            if(gameMode === 'casual') {
+                modeText = 'カジュアル';
+                badgeClass += "bg-cyan-500";
+            } else if(gameMode === 'normal') {
+                modeText = 'ノーマル';
+                badgeClass += "bg-yellow-500";
+            } else if(gameMode === 'expert') {
+                modeText = 'エキスパート';
+                badgeClass += "bg-red-600";
+            } else if(gameMode === 'master') {
+                modeText = 'マスター';
+                badgeClass += "bg-purple-600";
+            } else if(gameMode === 'tutorial') {
+                modeText = 'チュートリアル';
+                badgeClass += "bg-green-600 animate-pulse";
+            }
+
+            document.getElementById('phase-badge').innerText = phase === 'PLOT' ? modeText : "公開フェーズ";
+            document.getElementById('phase-badge').className = phase === 'PLOT' ? badgeClass : "bg-gray-400 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest";
+            
+            document.getElementById('pool-points').innerText = `${poolPoints} pt`;
+            const badge = document.getElementById('pool-badge');
+            if(poolPoints > 1) {
+                badge.innerText = `x${poolPoints}`;
+                badge.classList.remove('hidden');
+                document.getElementById('meter-bar').classList.replace('from-blue-500', 'from-yellow-400');
+                document.getElementById('meter-bar').classList.replace('to-indigo-600', 'to-red-500');
+            } else {
+                badge.classList.add('hidden');
+                document.getElementById('meter-bar').classList.replace('from-yellow-400', 'from-blue-500');
+                document.getElementById('meter-bar').classList.replace('to-red-500', 'to-indigo-600');
+            }
+
+            const hand = document.getElementById('hand-container');
+            const skipOpt = document.getElementById('skip-option');
+            
+            if(phase === 'PLOT') {
+                if (isBlockedNextTurn[0]) {
+                    skipOpt.classList.add('hidden');
+                    hand.innerHTML = `<div class="w-full px-4 mt-2">
+                        <button onclick="selectPlayerCard('BLOCKED')" class="w-full bg-slate-700 text-white font-black py-4 rounded-xl active:scale-95 transition shadow-md animate-pulse text-sm border-2 border-slate-900">
+                            🛑 ブロックされています（タップして進む）
+                        </button>
+                    </div>`;
+                } else {
+                    if (players[0].canSkip) skipOpt.classList.remove('hidden');
+                    else skipOpt.classList.add('hidden');
+
+                    hand.innerHTML = players[0].cards.map((c, i) => {
+                        let text = c, style = "bg-white border-blue-500 text-blue-600";
+                        if(c === 0) { text = '通知<br>ｵﾌ'; style = "bg-gray-100 border-gray-400 text-gray-700 text-[9px]"; }
+                        if(c === 'M') { text = '未読<br>ｽﾙｰ'; style = "bg-green-50 border-green-500 text-green-700 text-[9px]"; }
+                        if(c === 'C') { text = '既読<br>ｽﾙｰ'; style = "bg-yellow-50 border-yellow-400 text-yellow-700 text-[9px]"; }
+                        if(c === 'U') { text = '送信<br>取消'; style = "bg-red-50 border-red-400 text-red-600 text-[9px]"; }
+                        if(c === 'B') { text = 'ﾌﾞﾛｯｸ'; style = "bg-slate-700 border-slate-900 text-white text-[9px]"; }
+                        else if(typeof c === 'number' && c !== 0) text = '+'+c;
+
+                        let activeGlow = "";
+                        if (gameMode === 'tutorial') {
+                            if (tutorialStep === 0 && c === 3) activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 1 && c === 1) activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 2 && c === 3) activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 3 && c === 'C') activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 4 && c === 1) activeGlow = " ring-4 ring-green-400 scale-105";
+                        }
+
+                        return `<button onclick="selectPlayerCard(${i})" class="border-2 font-black h-10 w-9 md:h-12 md:w-11 rounded-lg active:scale-90 transition-transform shadow-sm flex items-center justify-center text-center leading-tight select-none ${style}${activeGlow}">${text}</button>`;
+                    }).join('');
+                }
+                document.getElementById('plot-area').classList.remove('hidden');
+            } else {
+                document.getElementById('plot-area').classList.add('hidden');
+                skipOpt.classList.add('hidden');
+            }
+
+            const table = document.getElementById('table-area');
+            table.innerHTML = players.map((p, i) => {
+                let cardContent = "";
+                let hasSkipIcon = p.canSkip ? '<span class="absolute -top-2 -right-2 text-sm drop-shadow-md">✨</span>' : '';
+                let remainingCards = (gameMode === 'normal' || gameMode === 'casual' || gameMode === 'tutorial') ? `<div class="text-[8px] text-gray-400 mt-0.5">${(gameMode === 'casual' || gameMode === 'tutorial') ? '無限' : '残: ' + p.cards.length}</div>` : '';
+
+                if(plots[i] !== null) {
+                    if(phase === 'REVEAL' && revealingIdx === i) {
+                        let text = revealedVal, style = "bg-white border-blue-600 text-blue-600";
+                        if(revealedVal === 'SKIP') { text = 'パス'; style = "bg-green-500 text-white border-green-600 text-xs"; }
+                        else if(revealedVal === 'BLOCKED') { text = '封印'; style = "bg-slate-700 text-white border-slate-900 text-xs"; }
+                        else if(revealedVal === 0) { text = '通知<br>ｵﾌ'; style = "bg-gray-600 text-white border-gray-800 text-[10px] leading-tight"; }
+                        else if(revealedVal === 'M') { text = '未読'; style = "bg-green-100 text-green-700 border-green-500 text-xs"; }
+                        else if(revealedVal === 'C') { text = '既読<br>ｽﾙｰ'; style = "bg-yellow-400 text-yellow-900 border-yellow-500 text-[10px] leading-tight"; }
+                        else if(revealedVal === 'U') { text = '送信<br>取消'; style = "bg-red-100 text-red-600 border-red-500 text-[10px] leading-tight"; }
+                        else if(revealedVal === 'B') { text = 'ﾌﾞﾛｯｸ'; style = "bg-slate-800 text-white border-slate-900 text-[10px] leading-tight"; }
+                        else if (typeof revealedVal === 'number') text = '+'+text;
+                        
+                        cardContent = `<div class="relative w-12 h-16 revealed rounded-lg flex items-center justify-center font-black text-sm border-2 ${style} text-center shadow-md mx-auto">${text}${hasSkipIcon}</div>`;
+                    } else if (phase === 'REVEAL' && (i < revealingIdx || revealingIdx === -1)) {
+                         cardContent = `<div class="relative w-12 h-16 card-face-down rounded-lg shadow-md border border-white/20 opacity-50 mx-auto">${hasSkipIcon}</div>`;
+                    } else {
+                         cardContent = `<div class="relative w-12 h-16 card-face-down rounded-lg shadow-md border border-white/20 animate-pulse mx-auto">${hasSkipIcon}</div>`;
+                    }
+                } else {
+                    cardContent = `<div class="relative w-12 h-16 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 mx-auto">${hasSkipIcon}</div>`;
+                }
+
+                return `
+                    <div class="flex flex-col text-center gap-1">
+                        <div class="text-[9px] font-bold ${p.isDealer ? 'text-yellow-600' : 'text-gray-500'} truncate px-1">${p.name} ${p.isDealer ? '👑' : ''}</div>
+                        ${cardContent}
+                        ${remainingCards}
+                        ${p.suberi && !isDealerCarryOver ? '<div class="text-[8px] bg-red-500 text-white px-1 py-0.5 rounded-full font-black animate-bounce shadow-md mx-auto whitespace-nowrap mt-1">スベリ！</div>' : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showModal(title, body, icon) {
+            document.getElementById('modal-icon').innerText = icon;
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerHTML = body;
+            document.getElementById('modal').classList.remove('hidden');
+            
+            document.getElementById('modal-btn').onclick = () => {
+                document.getElementById('modal').classList.add('hidden');
+                
+                if (gameMode === 'tutorial' && tutorialStep === 2) {
+                    currentDealer = 0; 
+                    startNewRound();
+                    return;
+                }
+                
+                if (gameMode === 'tutorial' && tutorialStep === 4) {
+                    tutorialStep = 0;
+                    document.getElementById('mode-select-overlay').classList.remove('hidden');
+                    document.getElementById('plot-area').classList.add('opacity-50', 'pointer-events-none');
+                    document.getElementById('tutorial-guide').classList.add('hidden');
+                    return;
+                }
+
+                currentDealer = (currentDealer + 1) % 4;
+                round++;
+                if (round > 4) {
+                    showFinalResult();
+                } else {
+                    startNewRound();
+                }
+            };
+        }
+
+        function saveHighestRank(mode, rank) {
+            const currentHighest = highestRanks[mode];
+            if (!currentHighest || rank < currentHighest) {
+                highestRanks[mode] = rank;
+                saveLocalMedals();
+                renderMedalIcons();
+            }
+        }
+
+        function showFinalResult() {
+            const rankedPlayers = players.map((p, i) => ({ ...p, score: scores[i] })).sort((a, b) => b.score - a.score);
+            
+            let rankHtml = `<div class="text-sm font-bold text-gray-500 mb-4">全4ラウンド終了！最終順位の発表です！</div>`;
+
+            const playerRankIdx = rankedPlayers.findIndex(p => p.id === 0);
+            let playerRank = 1;
+            if (playerRankIdx > 0) {
+                let tempRank = 1;
+                for (let i = 0; i <= playerRankIdx; i++) {
+                    if (i > 0 && rankedPlayers[i].score < rankedPlayers[i - 1].score) {
+                        tempRank = i + 1;
+                    }
+                }
+                playerRank = tempRank;
+            }
+
+            saveHighestRank(gameMode, playerRank);
+
+            // ★ スコアを獲得したらスプレッドシート(GAS)に送信
+            const myScore = scores[0];
+            if (myScore > 0) {
+                userTotalPoints += myScore;
+                saveProfileData();
+                updateProfileUI();
+                sendScoreToGAS(); // 裏側で送信
+            }
+
+            // マスターモードの解禁処理
+            if (gameMode === 'expert' && playerRank === 1 && !isMasterUnlocked) {
+                localStorage.setItem('master_unlocked_2026', 'true');
+                isMasterUnlocked = true;
+                checkMasterLockState();
+                
+                document.getElementById('unlock-popup').classList.remove('hidden');
+            }
+
+            rankHtml += `<div class="flex flex-col gap-2 mb-6 text-left">`;
+            
+            let currentRank = 1;
+            rankedPlayers.forEach((p, index) => {
+                if (index > 0 && p.score < rankedPlayers[index - 1].score) {
+                    currentRank = index + 1;
+                }
+                
+                let medal = currentRank === 1 ? '🥇' : currentRank === 2 ? '🥈' : currentRank === 3 ? '🥉' : '👏';
+                let bgClass = currentRank === 1 ? 'bg-yellow-50 border-yellow-300 shadow-md transform scale-105 my-1' : 'bg-gray-50 border-gray-100';
+                let nameClass = currentRank === 1 ? 'text-yellow-800' : 'text-gray-700';
+                
+                rankHtml += `
+                    <div class="flex justify-between items-center p-3 rounded-xl border ${bgClass} transition-all">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl w-6 text-center">${medal}</span>
+                            <span class="font-bold ${nameClass} text-sm">${p.name}</span>
+                        </div>
+                        <span class="font-black text-blue-600 text-lg">${p.score} <span class="text-xs text-gray-400 font-normal">pt</span></span>
+                    </div>
+                `;
+            });
+            rankHtml += `</div>`;
+
+            document.getElementById('modal-icon').innerText = "🎊";
+            document.getElementById('modal-title').innerText = "結果発表";
+            document.getElementById('modal-body').innerHTML = rankHtml; 
+            document.getElementById('modal-btn').innerText = "モード選択に戻る";
+            
+            document.getElementById('modal-btn').onclick = () => {
+                document.getElementById('modal').classList.add('hidden');
+                document.getElementById('mode-select-overlay').classList.remove('hidden');
+                document.getElementById('plot-area').classList.add('opacity-50', 'pointer-events-none');
+            };
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function startTutorial() {
+            tutorialStep = 0;
+            startGame('tutorial');
+        }
+
+        function addLog(msg) {
+            const log = document.getElementById('log');
+            const d = document.createElement('div');
+            d.innerHTML = `<span class="text-gray-500 mr-1">[${new Date().toLocaleTimeString().split(' ')[0]}]</span>${msg}`;
+            d.className = "mb-1";
+            log.prepend(d);
+        }
+    </script>
+</body>
+</html>
