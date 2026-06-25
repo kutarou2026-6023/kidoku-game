@@ -24,6 +24,14 @@
         .carry-over-glow { box-shadow: 0 0 15px rgba(234, 179, 8, 0.6); animation: pulse-glow 2s infinite; }
         @keyframes pulse-glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         ::-webkit-scrollbar { display: none; }
+        
+        /* ランキングのタブ用スタイル */
+        .tab-btn { padding: 6px 12px; border-radius: 9999px; font-weight: 900; transition: all 0.2s; white-space: nowrap; cursor: pointer; border: 2px solid transparent;}
+        .tab-btn:active { transform: scale(0.95); }
+        .tab-mode-active { background-color: #1e293b; color: white; border-color: #0f172a; }
+        .tab-mode-inactive { background-color: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+        .tab-period-active { background-color: #3b82f6; color: white; border-color: #2563eb; }
+        .tab-period-inactive { background-color: #eff6ff; color: #94a3b8; border-color: #dbeafe; }
     </style>
 </head>
 <body class="bg-slate-300 min-h-[100vh] flex justify-center items-center overflow-x-hidden">
@@ -38,7 +46,6 @@
             </div>
             <span id="phase-badge" class="bg-gray-400 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-widest">待機中</span>
             
-            <!-- 開発用：エキスパートクリアのシミュレートボタン -->
             <button onclick="debugWinExpert()" class="absolute top-14 right-2 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-md z-50 animate-bounce">
                 【テスト】エキスパートクリア
             </button>
@@ -77,14 +84,14 @@
                 </div>
             </div>
 
-            <!-- テーブル（公開エリア） -->
+            <!-- テーブル -->
             <div id="table-area" class="grid grid-cols-4 gap-2"></div>
 
             <!-- ログ -->
             <div id="log" class="bg-gray-900 text-gray-300 p-3 rounded-xl h-24 overflow-y-auto text-[11px] font-mono shadow-inner border-t-2 border-blue-500 flex flex-col-reverse"></div>
         </div>
 
-        <!-- アクションエリア（手札） -->
+        <!-- 手札エリア -->
         <div id="plot-area" class="px-3 pt-2 pb-safe bg-slate-50 border-t border-gray-200 opacity-50 pointer-events-none">
             <div id="skip-option" class="mb-3 hidden text-center">
                 <button onclick="selectPlayerCard('SKIP')" class="w-full bg-green-500 text-white font-black py-3 rounded-xl active:scale-95 transition shadow-md animate-pulse text-sm">
@@ -94,7 +101,7 @@
             <div id="hand-container" class="flex flex-wrap justify-center gap-1.5"></div>
         </div>
 
-        <!-- 初期データ読み込み用ローディング画面（0.5秒で消えます） -->
+        <!-- ローディング -->
         <div id="loading-overlay" class="absolute inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 transition-opacity duration-500">
             <div class="flex flex-col items-center gap-4">
                 <div class="relative w-16 h-16">
@@ -102,21 +109,19 @@
                     <div class="absolute inset-0 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
                 <div class="text-center mt-2">
-                    <h3 class="text-base font-black text-slate-800 tracking-tight">セーブデータを読み込み中</h3>
-                    <p class="text-[10px] text-cyan-600 font-black mt-1 uppercase tracking-widest animate-pulse">Loading Profile...</p>
+                    <h3 class="text-base font-black text-slate-800 tracking-tight">クラウドと同期中...</h3>
+                    <p class="text-[10px] text-cyan-600 font-bold mt-1" id="loading-status">セーブデータを確認しています</p>
                 </div>
             </div>
         </div>
 
-        <!-- ゲームモード選択画面（オーバーレイ） -->
+        <!-- モード選択画面 -->
         <div id="mode-select-overlay" class="absolute inset-0 bg-white/95 z-40 flex flex-col items-center justify-start py-6 px-5 overflow-y-auto backdrop-blur-sm hidden">
             
-            <!-- ランキングボタン (左上に配置) -->
             <button onclick="openLeaderboard()" class="absolute top-4 left-4 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-3 py-2 rounded-full shadow-sm transition active:scale-95 flex items-center justify-center border border-yellow-200 z-50 text-[10px] font-black tracking-wider" title="世界ランキングを見る">
                 🏆 ランキング
             </button>
 
-            <!-- リセットボタン (右上に配置) -->
             <button onclick="openResetConfirmModal()" class="absolute top-4 right-4 bg-red-100 hover:bg-red-200 text-red-600 p-2 rounded-full shadow-sm transition active:scale-95 flex items-center justify-center border border-red-200 z-50" title="データを完全に初期化する">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -126,7 +131,7 @@
             <h2 class="text-2xl font-black text-gray-800 mb-1 mt-10">ゲームモード選択</h2>
             <p class="text-xs text-gray-500 mb-4 text-center">遊び方を選択してください</p>
 
-            <!-- プロフィール編集カード（ID、ニックネーム表示、レート制へ移行） -->
+            <!-- プロフィール編集カード（全モードのレート表示ボタン化） -->
             <div class="w-full bg-slate-100 p-3 rounded-2xl mb-4 border border-slate-200 flex flex-col items-center">
                 <div class="flex items-center gap-2 mb-1 justify-center">
                     <span id="player-profile-name" class="font-black text-slate-800 text-sm">プレイヤー</span>
@@ -137,15 +142,26 @@
                         </svg>
                     </button>
                 </div>
-                <div class="text-[10px] text-slate-500 font-bold">
-                    現在のレート: <span id="player-profile-points" class="text-purple-600 font-black">1500</span> R
+                <div class="text-[10px] text-slate-500 font-bold mt-1">マイベスト (タップして詳細とボーダーを確認)</div>
+                <div class="grid grid-cols-2 gap-2 mt-1.5 w-full">
+                    <button onclick="openRateDetailModal('casual')" class="bg-cyan-50 text-cyan-700 border border-cyan-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
+                        カジュアル: <span id="rate-casual">0</span>
+                    </button>
+                    <button onclick="openRateDetailModal('normal')" class="bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
+                        ノーマル: <span id="rate-normal">0</span>
+                    </button>
+                    <button onclick="openRateDetailModal('expert')" class="bg-red-50 text-red-700 border border-red-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
+                        エキスパート: <span id="rate-expert">0</span>
+                    </button>
+                    <button onclick="openRateDetailModal('master')" class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
+                        マスター: <span id="rate-master">0</span>
+                    </button>
                 </div>
             </div>
 
             <div class="w-full space-y-3 pb-6">
                 <!-- 1. カジュアル -->
                 <button onclick="startGame('casual')" class="w-full bg-cyan-50 border-2 border-cyan-400 p-3.5 rounded-2xl shadow-sm active:scale-95 transition text-left relative overflow-visible">
-                    <span id="medal-casual" class="absolute -top-2.5 -right-1 text-2xl drop-shadow-md z-30"></span>
                     <div class="flex items-start gap-3 mb-1">
                         <span class="bg-cyan-100 text-cyan-600 text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">1</span>
                         <div>
@@ -153,12 +169,11 @@
                             <span class="inline-block font-black tracking-widest text-[8px] bg-cyan-100 text-cyan-600 px-1.5 py-0.5 rounded-full mt-1">初心者向け</span>
                         </div>
                     </div>
-                    <p class="text-[9px] text-cyan-900/70 font-bold mt-1 leading-relaxed">特殊カードは親の「既読スルー」のみ。数値カードは無限に使えます。ゲームの基本に慣れるためのライトなモード。（※レート変動なし）</p>
+                    <p class="text-[9px] text-cyan-900/70 font-bold mt-1 leading-relaxed">特殊カードは「既読スルー」のみ。数値カードは無限に使えます。</p>
                 </button>
 
                 <!-- 2. ノーマル -->
                 <button onclick="startGame('normal')" class="w-full bg-white border-2 border-yellow-500 p-3.5 rounded-2xl shadow-sm active:scale-95 transition text-left relative overflow-visible">
-                    <span id="medal-normal" class="absolute -top-2.5 -right-1 text-2xl drop-shadow-md z-30"></span>
                     <div class="flex items-start gap-3 mb-1">
                         <span class="bg-yellow-100 text-yellow-600 text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">2</span>
                         <div>
@@ -166,12 +181,11 @@
                             <span class="inline-block font-black tracking-widest text-[8px] bg-yellow-100 text-yellow-600 px-1.5 py-0.5 rounded-full mt-1">中級者向け</span>
                         </div>
                     </div>
-                    <p class="text-[9px] text-yellow-900/70 font-bold mt-1 leading-relaxed">最初から全てのカード(15枚)を持った状態でスタート。運に左右されず、戦略のみで勝敗を決めるモード。（※レート変動なし）</p>
+                    <p class="text-[9px] text-yellow-900/70 font-bold mt-1 leading-relaxed">最初から全てのカード(15枚)を持った状態でスタート。戦略のみで勝敗を決めるモード。</p>
                 </button>
 
                 <!-- 3. エキスパート -->
                 <button onclick="startGame('expert')" class="w-full bg-red-50 border-2 border-red-500 p-3.5 rounded-2xl shadow-xl active:scale-95 transition text-left relative overflow-visible">
-                    <span id="medal-expert" class="absolute -top-2.5 -right-1 text-2xl drop-shadow-md z-30"></span>
                     <div class="absolute -right-4 -top-4 text-4xl opacity-10">🃏</div>
                     <div class="flex items-start gap-3 mb-1 relative z-10">
                         <span class="bg-red-100 text-red-600 text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">3</span>
@@ -180,12 +194,11 @@
                             <span class="inline-block font-black tracking-widest text-[8px] bg-red-500 text-white px-1.5 py-0.5 rounded-full mt-1">上級者向け</span>
                         </div>
                     </div>
-                    <p class="text-[9px] text-red-900/70 font-bold mt-1 relative z-10 leading-relaxed">初期手札9枚。カードを出したら山札から補充するルール。（※レート変動なし / 👑<b>単独1位</b>でマスターモード解禁）</p>
+                    <p class="text-[9px] text-red-900/70 font-bold mt-1 relative z-10 leading-relaxed">初期手札9枚。カードを出したら山札から補充するルール。（👑<b>単独1位</b>でマスターモード解禁）</p>
                 </button>
 
                 <!-- 4. マスター -->
                 <button id="btn-master" onclick="clickMasterMode()" class="w-full bg-slate-900 border-2 border-purple-500 p-3.5 rounded-2xl shadow-xl active:scale-95 transition text-left relative overflow-visible opacity-50">
-                    <span id="medal-master" class="absolute -top-2.5 -right-1 text-2xl drop-shadow-md z-30"></span>
                     <div class="absolute -right-2 -top-2 text-4xl opacity-10">🔒</div>
                     <div class="flex items-start gap-3 mb-1 relative z-10">
                         <span id="master-lock-icon" class="bg-purple-600 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">🔒</span>
@@ -200,11 +213,24 @@
                 </button>
             </div>
 
-            <!-- チュートリアルボタン (緑基調) -->
+            <!-- チュートリアルボタン -->
             <button onclick="startTutorial()" class="w-full bg-green-600 border-2 border-green-500 hover:bg-green-700 text-white p-4 rounded-2xl shadow-lg active:scale-95 transition text-center font-black text-sm flex items-center justify-center gap-2 relative overflow-visible">
-                <span id="medal-tutorial" class="absolute -top-3 -right-1 text-2xl drop-shadow-md z-30"></span>
                 <span>🍀</span> チュートリアルをプレイ（遊びながら学ぶ）
             </button>
+        </div>
+
+        <!-- レート詳細モーダル -->
+        <div id="rate-detail-modal" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-[2rem] p-5 max-w-sm w-full text-center shadow-2xl flex flex-col max-h-[85vh]">
+                <h2 id="rd-title" class="text-xl font-black mb-1 text-gray-800">モード レート詳細</h2>
+                <div class="text-3xl font-black text-blue-600 mb-3"><span id="rd-total">0</span> <span class="text-sm text-gray-400 font-bold">R</span></div>
+                
+                <div id="rd-border-container"></div>
+                
+                <div id="rd-list-container" class="flex-1 overflow-y-auto mb-4 pr-1"></div>
+
+                <button onclick="closeRateDetailModal()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl text-sm transition active:scale-95 shadow-md">閉じる</button>
+            </div>
         </div>
 
         <!-- ニックネーム変更モーダル -->
@@ -234,41 +260,74 @@
             </div>
         </div>
 
-        <!-- 全データリセット確認モーダル -->
+        <!-- 全データリセット確認モーダル (1段階目) -->
         <div id="reset-confirm-modal" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-6 backdrop-blur-sm">
-            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-4 border-red-500">
-                <div class="text-red-500 text-6xl mb-3">⚠️</div>
-                <h2 class="text-xl font-black mb-2 text-red-600">データの初期化</h2>
+            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-2 border-slate-300">
+                <div class="text-slate-400 text-5xl mb-3">⚙️</div>
+                <h2 class="text-xl font-black mb-2 text-slate-800">データの初期化</h2>
                 <p class="text-xs text-slate-500 font-bold leading-relaxed mb-6">
-                    獲得したすべての【メダルバッジ】、現在の【レートレーティング】、および【マスターモードの解禁状況】をリセットし、最初の状態に戻します。<br>
-                    <span class="text-red-500 text-[10px] block mt-2 font-black">※この操作は元に戻せません。本当に初期化しますか？</span>
+                    全モードの【プレイ履歴とレート】、および【マスターモード解禁状況】をリセットし、初期状態に戻す手続きを開始します。
                 </p>
                 <div class="flex gap-2">
-                    <button onclick="closeResetConfirmModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-slate-700 font-bold py-3.5 rounded-xl text-xs transition active:scale-95">
-                        キャンセル
+                    <button onclick="closeResetConfirmModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-slate-700 font-bold py-3.5 rounded-xl text-xs transition active:scale-95">キャンセル</button>
+                    <button onclick="openFinalResetConfirmModal()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 rounded-xl text-xs transition active:scale-95 shadow-md">次へ（最終確認）</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 全データリセット確認モーダル (2段階目：最終警告) -->
+        <div id="final-reset-confirm-modal" class="absolute inset-0 bg-black/90 hidden flex items-center justify-center z-[70] p-6 backdrop-blur-md">
+            <div class="bg-red-50 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl border-4 border-red-600">
+                <div class="text-red-600 text-6xl mb-3 animate-pulse">☠️</div>
+                <h2 class="text-2xl font-black mb-2 text-red-700">最終警告</h2>
+                <p class="text-xs text-red-900 font-bold leading-relaxed mb-6">
+                    本当にすべてのデータを消去しますか？<br>
+                    <span class="text-[10px] block mt-2 font-black">※一度消去したデータは、クラウド上からも完全に削除され、二度と復元することはできません。</span>
+                </p>
+                <div class="flex flex-col gap-2">
+                    <button onclick="executeAllDataReset()" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl text-sm transition active:scale-95 shadow-md shadow-red-200">
+                        はい、すべて消去します
                     </button>
-                    <button onclick="executeAllDataReset()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl text-xs transition active:scale-95 shadow-md shadow-red-200">
-                        完全にリセットする
+                    <button onclick="closeFinalResetConfirmModal()" class="w-full bg-white text-slate-700 font-bold py-3 rounded-xl text-xs transition active:scale-95 border border-slate-300">
+                        やっぱりやめる
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- リーダーボード（ランキング）モーダル -->
-        <div id="leaderboard-modal" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div class="bg-white rounded-3xl p-5 max-w-sm w-full text-center shadow-2xl flex flex-col max-h-[85vh]">
-                <h2 class="text-2xl font-black mb-1 text-gray-800 tracking-tighter">🏆 世界レートランキング</h2>
-                <p class="text-[10px] text-gray-500 mb-4 font-bold border-b border-gray-100 pb-2">マスターモードで磨き上げた「実力レート」を競います</p>
+        <!-- リーダーボード（多機能ランキング）モーダル -->
+        <div id="leaderboard-modal" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-3 backdrop-blur-sm">
+            <div class="bg-white rounded-[2rem] p-4 max-w-sm w-full text-center shadow-2xl flex flex-col h-[90vh]">
+                <h2 class="text-xl font-black mb-1 text-gray-800 tracking-tighter">🏆 世界ランキング</h2>
+                <p id="leaderboard-desc" class="text-[9px] text-gray-500 mb-3 font-bold">モード・期間ごとの実力を競います</p>
                 
-                <div id="leaderboard-list" class="flex-1 overflow-y-auto mb-4 p-1 space-y-1.5 min-h-[50vh]">
-                    <!-- ランキングデータがここに挿入されます -->
+                <!-- ランキング タブ操作エリア -->
+                <div class="w-full bg-slate-50 rounded-xl p-2 mb-3 border border-slate-200">
+                    <!-- モード切り替えタブ -->
+                    <div class="flex gap-1 overflow-x-auto pb-2 mb-2 border-b border-slate-200" id="rank-mode-tabs">
+                        <button onclick="changeRankMode('casual')" id="rm-casual" class="tab-btn tab-mode-inactive text-[10px] flex-1">カジュアル</button>
+                        <button onclick="changeRankMode('normal')" id="rm-normal" class="tab-btn tab-mode-inactive text-[10px] flex-1">ノーマル</button>
+                        <button onclick="changeRankMode('expert')" id="rm-expert" class="tab-btn tab-mode-inactive text-[10px] flex-1">エキスパート</button>
+                        <button onclick="changeRankMode('master')" id="rm-master" class="tab-btn tab-mode-active text-[10px] flex-1 shadow-sm">マスター</button>
+                    </div>
+                    <!-- 期間切り替えタブ -->
+                    <div class="flex gap-1" id="rank-period-tabs">
+                        <button onclick="changeRankPeriod('total')" id="rp-total" class="tab-btn tab-period-active text-[10px] flex-1 shadow-sm">総合(ベスト20枠)</button>
+                        <button onclick="changeRankPeriod('this_week')" id="rp-this_week" class="tab-btn tab-period-inactive text-[10px] flex-1">今週(獲得PR)</button>
+                        <button onclick="changeRankPeriod('last_week')" id="rp-last_week" class="tab-btn tab-period-inactive text-[10px] flex-1">先週(獲得PR)</button>
+                    </div>
+                </div>
+                
+                <!-- ランキング表示リスト -->
+                <div id="leaderboard-list" class="flex-1 overflow-y-auto mb-3 p-1 space-y-1.5 bg-white border border-gray-100 rounded-xl shadow-inner relative">
+                    <!-- データがここに挿入されます -->
                 </div>
 
-                <button onclick="closeLeaderboard()" class="w-full bg-gray-900 text-white font-bold py-3.5 rounded-xl text-sm transition active:scale-95 shadow-md">閉じる</button>
+                <button onclick="closeLeaderboard()" class="w-full bg-slate-900 text-white font-black py-4 rounded-xl text-sm transition active:scale-95 shadow-md">閉じる</button>
             </div>
         </div>
 
-        <!-- マスター解禁おめでとうポップアップ (結果モーダルの上に表示) -->
+        <!-- マスター解禁おめでとうポップアップ -->
         <div id="unlock-popup" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-[60] p-6 backdrop-blur-md transition-opacity">
             <div class="bg-gradient-to-br from-purple-900 via-slate-900 to-indigo-900 border-2 border-purple-500 p-8 rounded-3xl text-white text-center shadow-2xl max-w-sm w-full relative overflow-hidden">
                 <div class="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIi8+CjxyZWN0IHg9IjQiIHk9IjQiIHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiLz4KPC9zdmc+')]"></div>
@@ -291,14 +350,13 @@
             </div>
         </div>
 
-        <!-- 結果モーダル (z-50に配置) -->
+        <!-- 結果モーダル -->
         <div id="modal" class="absolute inset-0 bg-black/70 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl">
-                <div id="modal-icon" class="text-5xl mb-2">🏆</div>
-                <h2 id="modal-title" class="text-2xl font-black mb-2 text-gray-800">タイトル</h2>
-                <!-- スマホの画面外に出ないように max-h-[55vh] overflow-y-auto を追加 -->
-                <div id="modal-body" class="text-gray-500 mb-6 font-medium whitespace-pre-wrap text-sm leading-relaxed text-left max-h-[55vh] overflow-y-auto"></div>
-                <button id="modal-btn" class="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl active:scale-95 transition-all text-sm">次のラウンド</button>
+            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl flex flex-col max-h-[85vh]">
+                <div id="modal-icon" class="text-5xl mb-2 flex-shrink-0">🏆</div>
+                <h2 id="modal-title" class="text-2xl font-black mb-2 text-gray-800 flex-shrink-0">タイトル</h2>
+                <div id="modal-body" class="text-gray-500 mb-4 font-medium whitespace-pre-wrap text-sm leading-relaxed text-left flex-1 overflow-y-auto px-1"></div>
+                <button id="modal-btn" class="w-full bg-gray-900 text-white font-black py-4 rounded-2xl active:scale-95 transition-all text-sm flex-shrink-0 shadow-md">次のラウンド</button>
             </div>
         </div>
     </div>
@@ -317,13 +375,19 @@
         let poolPoints = 1;
         let isBlockedNextTurn = [false, false, false, false];
 
-        // ユーザー固有データ（Local Storage管理）- レート制に完全刷新
+        // --- セーブデータ関連 ---
         let userShortId = "";
         let userNickname = "プレイヤー";
-        let userTotalPoints = 1500; // 内部変数はレート値を保持(初期値1500)
-
-        let highestRanks = { casual: null, normal: null, expert: null, master: null, tutorial: null };
+        // 全プレイ履歴を保存する配列（{ date, pr, mode, rank, points } の形式）
+        let userHistory = []; 
+        let userRatings = { casual: 0, normal: 0, expert: 0, master: 0 };
         let isMasterUnlocked = false;
+
+        // --- ランキング用変数 ---
+        let cachedLeaderboardData = [];
+        let currentRankMode = 'master';
+        let currentRankPeriod = 'total'; 
+
         let tutorialStep = 0;
 
         const DECK_CASUAL = [1, 2, 3, 'C']; 
@@ -335,12 +399,54 @@
         const UNLOCK_PASSWORD = "KIDOKU_M_2026";
 
         // ★★★ 提供されたGoogle Apps Script (GAS) のURL ★★★
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwJMcQpf5PXZbhV-VcRfYVw7GzslX_gbPO6t1TGSVilRGXVvUqryn65v9aAC88-2RtjQQ/exec";
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz7abObeYdefvn0IeLA9H9V9LJPE57dDnRM6fZrmXoac14Xj4Cwrk9t1OrOcVV3ZNs/exec";
 
         window.addEventListener('DOMContentLoaded', () => {
-            initLocalData();
-            
-            // 0.5秒だけローディング画面を見せてからモード選択画面へ
+            initApp();
+        });
+
+        // ==========================================
+        // クラウドセーブ機能（起動時の同期）
+        // ==========================================
+        async function initApp() {
+            const savedData = localStorage.getItem('kidoku_profile_best_2026');
+            if (savedData) {
+                const p = JSON.parse(savedData);
+                userShortId = p.id;
+                userNickname = p.name;
+                userHistory = p.history || [];
+                if (p.isMasterUnlocked) isMasterUnlocked = true;
+            } else {
+                userShortId = Math.floor(10000 + Math.random() * 90000).toString();
+                userNickname = "プレイヤー";
+            }
+
+            try {
+                const response = await fetch(GAS_URL);
+                if (response.ok) {
+                    const data = await response.json();
+                    cachedLeaderboardData = data;
+
+                    const myFullName = `${userNickname}#${userShortId}`;
+                    const myCloudData = data.find(p => p.name === myFullName);
+                    
+                    if (myCloudData && myCloudData.history) {
+                        userHistory = myCloudData.history;
+                        document.getElementById('loading-status').innerText = "クラウドから復元しました！";
+                    } else {
+                        document.getElementById('loading-status').innerText = "新規セーブデータを作成しました";
+                    }
+                }
+            } catch (e) {
+                console.warn("クラウド同期エラー", e);
+                document.getElementById('loading-status').innerText = "オフラインで起動しています";
+            }
+
+            recalculateRates();
+            saveProfileData();
+            updateProfileUI();
+            checkMasterLockState();
+
             setTimeout(() => {
                 const loading = document.getElementById('loading-overlay');
                 loading.classList.add('opacity-0');
@@ -348,72 +454,99 @@
                     loading.classList.add('hidden');
                     document.getElementById('mode-select-overlay').classList.remove('hidden');
                 }, 500); 
-            }, 500);
-        });
-
-        // ==========================================
-        // ローカルデータ管理 (LocalStorage)
-        // ==========================================
-        function initLocalData() {
-            // プロフィールの読み込み・作成 (ポイント制からレート制へのマイグレーション含む)
-            const savedProfile = localStorage.getItem('kidoku_profile_2026_rating');
-            if (savedProfile) {
-                const p = JSON.parse(savedProfile);
-                userShortId = p.id;
-                userNickname = p.name;
-                userTotalPoints = typeof p.points === 'number' ? p.points : 1500; 
-            } else {
-                // 旧セーブデータ（ポイント制）がある場合は移行を試みる
-                const oldProfile = localStorage.getItem('kidoku_profile_2026');
-                if (oldProfile) {
-                    const op = JSON.parse(oldProfile);
-                    userShortId = op.id;
-                    userNickname = op.name;
-                } else {
-                    userShortId = Math.floor(10000 + Math.random() * 90000).toString();
-                    userNickname = "プレイヤー";
-                }
-                userTotalPoints = 1500; // 新規はレート1500スタート
-                saveProfileData();
-            }
-
-            // メダルとマスターロックの読み込み
-            if (localStorage.getItem('master_unlocked_2026') === 'true') {
-                isMasterUnlocked = true;
-            }
-            const storedRanks = localStorage.getItem('highest_ranks_2026');
-            if (storedRanks) {
-                highestRanks = { ...highestRanks, ...JSON.parse(storedRanks) };
-            }
-
-            updateProfileUI();
-            checkMasterLockState();
-            renderMedalIcons();
+            }, 800);
         }
 
         function saveProfileData() {
-            const data = { id: userShortId, name: userNickname, points: userTotalPoints };
-            localStorage.setItem('kidoku_profile_2026_rating', JSON.stringify(data));
+            const data = { 
+                id: userShortId, 
+                name: userNickname, 
+                history: userHistory,
+                isMasterUnlocked: isMasterUnlocked
+            };
+            localStorage.setItem('kidoku_profile_best_2026', JSON.stringify(data));
         }
 
         function updateProfileUI() {
             document.getElementById('player-id-display').innerText = `ID: ${userShortId}`;
             document.getElementById('player-profile-name').innerText = userNickname;
             document.getElementById('player-profile-id').innerText = `#${userShortId}`;
-            document.getElementById('player-profile-points').innerText = userTotalPoints;
+            
+            document.getElementById('rate-casual').innerText = userRatings.casual;
+            document.getElementById('rate-normal').innerText = userRatings.normal;
+            document.getElementById('rate-expert').innerText = userRatings.expert;
+            document.getElementById('rate-master').innerText = userRatings.master;
         }
 
         // ==========================================
-        // GAS (Googleスプレッドシート) 連携処理
+        // レート計算＆週の切り替えロジック
         // ==========================================
         
-        // 1. スコア(レート)を送信する (非同期で裏側で実行)
-        function sendScoreToGAS() {
-            if (!GAS_URL) return;
+        // 週の計算（月曜午前5時切り替え）
+        function getWeekRanges() {
+            const now = new Date();
+            // 現在時刻から5時間引くことで、月曜0:00〜4:59を日曜扱いにする
+            const shiftedNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+            const dayOfWeek = shiftedNow.getDay() || 7; // 日曜(0)を7とする
             
+            // 基準となる月曜日の0:00を計算
+            const thisMondayShifted = new Date(shiftedNow.getFullYear(), shiftedNow.getMonth(), shiftedNow.getDate() - dayOfWeek + 1);
+            thisMondayShifted.setHours(0, 0, 0, 0);
+            
+            // 実際の週の切り替えタイミングは、その月曜日の午前5時
+            const thisWeekStart = new Date(thisMondayShifted.getTime() + 5 * 60 * 60 * 1000);
+            const lastWeekStart = new Date(thisWeekStart.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            return {
+                thisWeekStart: thisWeekStart,
+                lastWeekStart: lastWeekStart,
+                lastWeekEnd: thisWeekStart 
+            };
+        }
+
+        function calculatePR(rank, points) {
+            let base = 0;
+            let bonus = 0;
+            if (rank === 1) { base = 40; bonus = points * 10; }
+            else if (rank === 2) { base = 25; bonus = points * 5; }
+            else if (rank === 3) { base = 15; bonus = points * 2; }
+            else if (rank === 4) { base = 5; bonus = 0; }
+            return base + bonus;
+        }
+
+        // 指定したモードの履歴から直近枠と歴代枠を抽出する共通関数
+        function getModeHistoryDetail(mode) {
+            const ranges = getWeekRanges();
+            const modeHistory = userHistory.filter(h => h.mode === mode);
+            
+            // 月曜午前5時切り替えに基づく「先週」の開始日時以降を直近枠の対象とする
+            const recent = modeHistory.filter(h => new Date(h.date) >= ranges.lastWeekStart).sort((a, b) => b.pr - a.pr);
+            const older = modeHistory.filter(h => new Date(h.date) < ranges.lastWeekStart);
+            
+            const bestRecent = recent.slice(0, 5);
+            const remainingRecent = recent.slice(5);
+            const allOlder = older.concat(remainingRecent).sort((a, b) => b.pr - a.pr);
+            const bestOlder = allOlder.slice(0, 15);
+            
+            let totalPR = 0;
+            bestRecent.forEach(h => totalPR += h.pr);
+            bestOlder.forEach(h => totalPR += h.pr);
+            
+            return { bestRecent, bestOlder, totalPR };
+        }
+
+        function recalculateRates() {
+            ['casual', 'normal', 'expert', 'master'].forEach(mode => {
+                const detail = getModeHistoryDetail(mode);
+                userRatings[mode] = detail.totalPR;
+            });
+        }
+
+        function sendHistoryToGAS() {
+            if (!GAS_URL) return;
             const postData = {
                 name: `${userNickname}#${userShortId}`,
-                score: userTotalPoints // スプレッドシート側のヘッダーが「score」を想定しているため、キー名は「score」としてレートの数値を送信
+                history: userHistory
             };
 
             fetch(GAS_URL, {
@@ -421,38 +554,188 @@
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(postData)
             }).then(response => {
-                if (!response.ok) {
-                    console.warn("GAS通信エラー: HTTP status " + response.status);
-                }
+                if (!response.ok) console.warn("GAS通信エラー");
             }).catch(e => {
-                console.warn("GAS通信エラー (CORSやアクセス権限の可能性があります):", e);
+                console.warn("GAS通信エラー:", e);
             });
         }
 
-        // ランキングリストのレンダリング処理（共通化）
-        function renderLeaderboardData(data, listEl) {
-            // 同じ名前("名前#ID")の人が何度も送信している可能性があるため、最も高いスコアのものだけを抽出
-            const uniquePlayers = {};
-            data.forEach(p => {
-                if (p.name && typeof p.score === 'number') {
-                    if (!uniquePlayers[p.name] || uniquePlayers[p.name].score < p.score) {
-                        uniquePlayers[p.name] = p;
+        // ==========================================
+        // レート詳細モーダル機能
+        // ==========================================
+        function openRateDetailModal(mode) {
+            const detail = getModeHistoryDetail(mode);
+            const modal = document.getElementById('rate-detail-modal');
+            const modeNames = { casual: 'カジュアル', normal: 'ノーマル', expert: 'エキスパート', master: 'マスター' };
+            
+            document.getElementById('rd-title').innerText = `${modeNames[mode]} レート詳細`;
+            document.getElementById('rd-total').innerText = detail.totalPR;
+            
+            // ボーダーラインの計算
+            let borderPR = 0;
+            if (detail.bestRecent.length + detail.bestOlder.length >= 20) {
+                const all20 = [...detail.bestRecent, ...detail.bestOlder].sort((a, b) => a.pr - b.pr);
+                borderPR = all20[0].pr; 
+            }
+
+            let borderHtml = `<div class="text-[10px] text-slate-600 bg-blue-50 p-3 rounded-xl mb-4 text-left font-bold border border-blue-100 shadow-inner">`;
+            if (borderPR === 0) {
+                borderHtml += `<div class="flex items-center gap-2 mb-1"><span class="text-xl">✨</span> <span class="text-blue-700 text-xs">ボーダー：0 PR</span></div>
+                <span class="text-slate-500">（マイベスト20枠に空きがあります！）<br>どんな結果でもプレイすれば必ずレートが加算されます。</span>`;
+            } else {
+                borderHtml += `<div class="flex items-center gap-2 mb-2"><span class="text-xl">🔥</span> <span class="text-red-600 text-xs">更新ボーダー：${borderPR} PR 超え</span></div>
+                <span class="text-[9px] text-slate-500 font-normal">以下のいずれかの結果を出せばレートが上がります。</span>
+                <div class="mt-2 grid grid-cols-3 gap-1.5 text-center">`;
+                
+                // 1位〜3位の必要ポイントを逆算して表示
+                for (let r = 1; r <= 3; r++) {
+                    let neededPoints = -1;
+                    for (let p = 0; p <= 30; p++) {
+                        if (calculatePR(r, p) > borderPR) {
+                            neededPoints = p;
+                            break;
+                        }
                     }
+                    if (neededPoints !== -1) {
+                        borderHtml += `<div class="bg-white border border-slate-200 rounded py-1.5 shadow-sm"><span class="text-slate-800 text-[9px]">${r}位</span><br><span class="text-blue-600 text-xs font-black">${neededPoints}pt〜</span></div>`;
+                    } else {
+                        borderHtml += `<div class="bg-white border border-slate-200 rounded py-1.5 opacity-50"><span class="text-slate-800 text-[9px]">${r}位</span><br><span class="text-red-500 text-xs font-black">更新不可</span></div>`;
+                    }
+                }
+                borderHtml += `</div>`;
+            }
+            borderHtml += `</div>`;
+            document.getElementById('rd-border-container').innerHTML = borderHtml;
+
+            // リストの生成
+            let listHtml = `<h4 class="text-[11px] font-black text-slate-700 mb-2 border-b border-slate-200 pb-1 text-left">直近枠（今週・先週のベスト5）</h4>`;
+            if (detail.bestRecent.length === 0) listHtml += `<p class="text-xs text-slate-400 mb-4 text-left">データなし</p>`;
+            detail.bestRecent.forEach((h, i) => {
+                listHtml += generateHistoryItemHtml(h, `直近${i+1}`);
+            });
+            
+            listHtml += `<h4 class="text-[11px] font-black text-slate-700 mb-2 mt-4 border-b border-slate-200 pb-1 text-left">歴代枠（それ以外のベスト15）</h4>`;
+            if (detail.bestOlder.length === 0) listHtml += `<p class="text-xs text-slate-400 mb-4 text-left">データなし</p>`;
+            detail.bestOlder.forEach((h, i) => {
+                listHtml += generateHistoryItemHtml(h, `歴代${i+1}`);
+            });
+
+            document.getElementById('rd-list-container').innerHTML = listHtml;
+            modal.classList.remove('hidden');
+        }
+
+        function closeRateDetailModal() {
+            document.getElementById('rate-detail-modal').classList.add('hidden');
+        }
+
+        function generateHistoryItemHtml(h, label) {
+            const rankStr = h.rank ? `${h.rank}位` : '-位';
+            const ptStr = h.points !== undefined ? `${h.points}pt` : '-pt';
+            const prStr = `${h.pr}`;
+            return `
+                <div class="flex justify-between items-center bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg mb-1.5 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <span class="text-[9px] font-black text-white bg-slate-500 px-1.5 py-0.5 rounded-sm w-9 text-center">${label}</span>
+                        <span class="text-[11px] font-black text-slate-700">${rankStr} <span class="text-[10px] text-slate-400 mx-0.5">/</span> ${ptStr}</span>
+                    </div>
+                    <div class="text-sm font-black text-blue-600">${prStr} <span class="text-[9px] text-slate-400 font-bold">PR</span></div>
+                </div>
+            `;
+        }
+
+
+        // ==========================================
+        // 多機能ランキング処理
+        // ==========================================
+        function changeRankMode(mode) {
+            currentRankMode = mode;
+            ['casual', 'normal', 'expert', 'master'].forEach(m => {
+                const btn = document.getElementById(`rm-${m}`);
+                if(m === mode) {
+                    btn.classList.replace('tab-mode-inactive', 'tab-mode-active');
+                    btn.classList.add('shadow-sm');
+                } else {
+                    btn.classList.replace('tab-mode-active', 'tab-mode-inactive');
+                    btn.classList.remove('shadow-sm');
+                }
+            });
+            renderLeaderboard();
+        }
+
+        function changeRankPeriod(period) {
+            currentRankPeriod = period;
+            ['total', 'this_week', 'last_week'].forEach(p => {
+                const btn = document.getElementById(`rp-${p}`);
+                if(p === period) {
+                    btn.classList.replace('tab-period-inactive', 'tab-period-active');
+                    btn.classList.add('shadow-sm');
+                } else {
+                    btn.classList.replace('tab-period-active', 'tab-period-inactive');
+                    btn.classList.remove('shadow-sm');
+                }
+            });
+            
+            const desc = document.getElementById('leaderboard-desc');
+            if (period === 'total') desc.innerText = "上位20枠(直近5+歴代15)の総合実力レート";
+            if (period === 'this_week') desc.innerText = "今週(月曜5時〜)に稼いだPRの総獲得量";
+            if (period === 'last_week') desc.innerText = "先週稼いだPRの総獲得量";
+
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            const listEl = document.getElementById('leaderboard-list');
+            const ranges = getWeekRanges();
+            
+            let playerScores = [];
+
+            cachedLeaderboardData.forEach(player => {
+                if (!player.history || player.history.length === 0) return;
+                
+                const modeHistory = player.history.filter(h => h.mode === currentRankMode);
+                if (modeHistory.length === 0) return;
+
+                let scoreForRanking = 0;
+
+                if (currentRankPeriod === 'total') {
+                    // 月曜5時切り替えに合わせた直近枠の抽出
+                    const recent = modeHistory.filter(h => new Date(h.date) >= ranges.lastWeekStart).sort((a, b) => b.pr - a.pr);
+                    const older = modeHistory.filter(h => new Date(h.date) < ranges.lastWeekStart);
+                    const bestRecent = recent.slice(0, 5);
+                    const allOlder = older.concat(recent.slice(5)).sort((a, b) => b.pr - a.pr);
+                    const bestOlder = allOlder.slice(0, 15);
+                    
+                    bestRecent.forEach(h => scoreForRanking += h.pr);
+                    bestOlder.forEach(h => scoreForRanking += h.pr);
+                } 
+                else if (currentRankPeriod === 'this_week') {
+                    modeHistory.forEach(h => {
+                        if (new Date(h.date) >= ranges.thisWeekStart) scoreForRanking += h.pr;
+                    });
+                } 
+                else if (currentRankPeriod === 'last_week') {
+                    modeHistory.forEach(h => {
+                        const d = new Date(h.date);
+                        if (d >= ranges.lastWeekStart && d < ranges.lastWeekEnd) scoreForRanking += h.pr;
+                    });
+                }
+
+                if (scoreForRanking > 0) {
+                    playerScores.push({ name: player.name, score: scoreForRanking });
                 }
             });
 
-            // スコアの降順（高い順）にソート
-            const sortedPlayers = Object.values(uniquePlayers).sort((a, b) => b.score - a.score);
+            playerScores.sort((a, b) => b.score - a.score);
             
             let html = '';
-            sortedPlayers.slice(0, 50).forEach((p, index) => {
+            playerScores.slice(0, 50).forEach((p, index) => {
                 const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `<span class="text-gray-400">${index + 1}</span>`;
                 const isMe = p.name === `${userNickname}#${userShortId}`;
                 
-                // "名前#ID" を分割して綺麗に表示
                 const nameParts = p.name.split('#');
                 const displayName = nameParts[0] || "不明";
                 const displayId = nameParts[1] ? `#${nameParts[1]}` : "";
+                const unit = currentRankPeriod === 'total' ? 'R' : 'PR';
                 
                 html += `
                     <div class="flex justify-between items-center p-3 border-b border-gray-100 ${isMe ? 'bg-yellow-50 rounded-lg border border-yellow-200 shadow-sm' : ''}">
@@ -463,47 +746,49 @@
                                 ${isMe ? '<span class="text-[8px] bg-yellow-400 text-yellow-900 px-1 py-0.5 rounded ml-1 flex-shrink-0 font-black">YOU</span>' : ''}
                             </span>
                         </div>
-                        <span class="font-black text-blue-600 text-sm flex-shrink-0">${p.score} <span class="text-[9px] text-gray-400 font-normal">R</span></span>
+                        <span class="font-black text-blue-600 text-sm flex-shrink-0">${p.score} <span class="text-[9px] text-gray-400 font-normal">${unit}</span></span>
                     </div>
                 `;
             });
             
-            if (sortedPlayers.length === 0) html = '<div class="text-center py-10 text-gray-500 text-xs font-bold">まだランキングデータがありません</div>';
+            if (playerScores.length === 0) {
+                html = `<div class="text-center py-10 text-gray-500 text-xs font-bold flex flex-col items-center justify-center h-full">
+                    <span class="text-2xl mb-2 opacity-50">🍃</span>
+                    指定した条件のランキングデータが<br>まだありません
+                </div>`;
+            }
             
             listEl.innerHTML = html;
         }
 
-        // 2. ランキングを取得して表示する
         async function openLeaderboard() {
             document.getElementById('leaderboard-modal').classList.remove('hidden');
             const listEl = document.getElementById('leaderboard-list');
-            listEl.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold animate-pulse text-xs">ランキングを取得中...</div>';
+            
+            currentRankMode = gameMode !== 'tutorial' ? gameMode : 'master';
+            changeRankMode(currentRankMode);
+            changeRankPeriod(currentRankPeriod);
+
+            listEl.innerHTML = '<div class="text-center py-10 text-gray-400 font-bold animate-pulse text-xs">クラウドからデータを取得中...</div>';
 
             try {
                 const response = await fetch(GAS_URL);
-                if (!response.ok) {
-                    throw new Error("HTTP Status: " + response.status);
+                if (!response.ok) throw new Error("HTTP Status: " + response.status);
+                
+                cachedLeaderboardData = await response.json();
+                
+                const myFullName = `${userNickname}#${userShortId}`;
+                const myCloudData = cachedLeaderboardData.find(p => p.name === myFullName);
+                if (myCloudData && myCloudData.history) {
+                    userHistory = myCloudData.history;
+                    recalculateRates();
+                    saveProfileData();
+                    updateProfileUI();
                 }
-                const data = await response.json();
-                renderLeaderboardData(data, listEl);
 
+                renderLeaderboard();
             } catch (e) {
-                console.error("Leaderboard fetch error:", e);
-                
-                // フォールバック用のダミーデータ（エラー時にUIを確認できるようにするため）
-                const dummyData = [
-                    { name: "テストプレイヤー#99999", score: 1650 },
-                    { name: `${userNickname}#${userShortId}`, score: userTotalPoints },
-                    { name: "CPUマスター#12345", score: 1580 },
-                    { name: "初心者#54321", score: 1420 }
-                ];
-                renderLeaderboardData(dummyData, listEl);
-                
-                // エラーメッセージを上部に追加
-                const errorMsg = document.createElement('div');
-                errorMsg.className = "bg-red-50 text-red-600 text-[10px] font-bold p-3 mb-3 rounded-lg border border-red-200 shadow-sm text-left";
-                errorMsg.innerHTML = "⚠️ <b>通信エラーが発生しました</b><br>GASのURLが無効か、アクセス権限が不足しています。代わりにローカルの模擬データを表示しています。<br><br>【修正方法】GASの「新しいデプロイ」設定で<b>「アクセスできるユーザー」を「全員」</b>にして再デプロイしてください。";
-                listEl.prepend(errorMsg);
+                listEl.innerHTML = '<div class="text-center py-10 text-red-500 font-bold text-xs">⚠️ 通信エラーが発生しました<br>時間を置いて再度お試しください</div>';
             }
         }
 
@@ -512,7 +797,7 @@
         }
 
         // ==========================================
-        // ニックネーム変更モーダル制御
+        // ニックネーム変更
         // ==========================================
         function openNicknameModal() {
             document.getElementById('nickname-input').value = userNickname;
@@ -538,14 +823,15 @@
             saveProfileData();
             updateProfileUI();
             
-            // ニックネームが変わったので最新スコアでスプレッドシートに送信し直す
-            sendScoreToGAS();
+            if (userHistory.length > 0) {
+                sendHistoryToGAS();
+            }
 
             closeNicknameModal();
         }
 
         // ==========================================
-        // その他のシステム管理（リセット・UI更新など）
+        // データの初期化 (2段階確認)
         // ==========================================
         function openResetConfirmModal() {
             document.getElementById('reset-confirm-modal').classList.remove('hidden');
@@ -555,36 +841,36 @@
             document.getElementById('reset-confirm-modal').classList.add('hidden');
         }
 
+        function openFinalResetConfirmModal() {
+            document.getElementById('reset-confirm-modal').classList.add('hidden');
+            document.getElementById('final-reset-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeFinalResetConfirmModal() {
+            document.getElementById('final-reset-confirm-modal').classList.add('hidden');
+        }
+
         function executeAllDataReset() {
             isMasterUnlocked = false;
-            highestRanks = { casual: null, normal: null, expert: null, master: null, tutorial: null };
-            userTotalPoints = 1500; // レートリセット
+            userHistory = [];
+            userRatings = { casual: 0, normal: 0, expert: 0, master: 0 };
             userNickname = "プレイヤー";
 
-            localStorage.removeItem('master_unlocked_2026');
-            localStorage.removeItem('highest_ranks_2026');
-            localStorage.removeItem('kidoku_profile_2026'); // 旧プロフィールも削除
+            localStorage.removeItem('kidoku_profile_best_2026'); 
             saveProfileData();
 
             checkMasterLockState();
-            renderMedalIcons();
             updateProfileUI();
-            closeResetConfirmModal();
-
-            alert("🔄 すべてのローカルデータが正常に初期化されました。");
+            
+            sendHistoryToGAS();
+            
+            closeFinalResetConfirmModal();
+            alert("🔄 すべてのデータが正常に初期化されました。");
         }
 
-        function renderMedalIcons() {
-            const medals = { 1: "🥇", 2: "🥈", 3: "🥉", 4: "⚪" };
-            ['casual', 'normal', 'expert', 'master', 'tutorial'].forEach(mode => {
-                const el = document.getElementById(`medal-${mode}`);
-                if (el) {
-                    const rank = highestRanks[mode];
-                    el.innerText = rank ? medals[rank] : "";
-                }
-            });
-        }
-
+        // ==========================================
+        // システム管理
+        // ==========================================
         function checkMasterLockState() {
             const btn = document.getElementById('btn-master');
             const icon = document.getElementById('master-lock-icon');
@@ -628,7 +914,7 @@
             const pass = document.getElementById('master-password-input').value;
             if (pass === UNLOCK_PASSWORD) {
                 isMasterUnlocked = true;
-                localStorage.setItem('master_unlocked_2026', 'true');
+                saveProfileData();
                 closePasswordModal();
                 checkMasterLockState();
                 startGame('master');
@@ -641,14 +927,11 @@
             document.getElementById('unlock-popup').classList.add('hidden');
         }
 
-        // ==========================================
-        // 開発用デバッグ関数
-        // ==========================================
         function debugWinExpert() {
             gameMode = 'expert';
-            scores = [4, 0, 0, 0];
+            scores = [8, 0, 0, 0]; 
             players = [
-                { id: 0, name: "あなた", score: 4 },
+                { id: 0, name: "あなた", score: 8 },
                 { id: 1, name: "CPU 1", score: 0 },
                 { id: 2, name: "CPU 2", score: 0 },
                 { id: 3, name: "CPU 3", score: 0 }
@@ -658,14 +941,16 @@
             document.getElementById('mode-select-overlay').classList.add('hidden');
             document.getElementById('password-modal').classList.add('hidden');
             document.getElementById('reset-confirm-modal').classList.add('hidden');
+            document.getElementById('final-reset-confirm-modal').classList.add('hidden');
             document.getElementById('modal').classList.add('hidden');
             document.getElementById('leaderboard-modal').classList.add('hidden');
+            document.getElementById('rate-detail-modal').classList.add('hidden');
             
             showFinalResult();
         }
 
         // ==========================================
-        // ゲームロジック (チュートリアル＆進行)
+        // ゲームロジック
         // ==========================================
         function startGame(mode) {
             gameMode = mode;
@@ -1020,7 +1305,6 @@
                 } else {
                     scores.forEach((_, i) => { if (i !== currentDealer) scores[i] += 1; });
                     
-                    // 第4ラウンド終了かどうかの判定を含める
                     const isGameFinished = (round >= 4);
                     const btnText = isGameFinished ? "結果発表へ" : "次のラウンド";
                     showModal("👀 既読スルー 不発", `最終的に誰もGOAL(${GOAL})に届かず！\nペナルティ：親以外全員に1ポイント入りラウンド終了！`, "🤦", btnText, () => {
@@ -1049,7 +1333,6 @@
             }
         }
 
-        // ラウンド終了時の次の処理を一括ハンドリング
         function handleRoundEnd(isGameFinished) {
             if (isGameFinished) {
                 showFinalResult();
@@ -1061,7 +1344,6 @@
         }
 
         function finalizeResult(res) {
-            // チュートリアル用の判定
             if (gameMode === 'tutorial') {
                 if (tutorialStep === 1 && res.type === 'WIN') {
                     tutorialStep = 2; 
@@ -1072,10 +1354,6 @@
                     return;
                 }
                 if (tutorialStep === 4 && res.type === 'WIN') {
-                    highestRanks.tutorial = 1;
-                    localStorage.setItem('highest_ranks_2026', JSON.stringify(highestRanks));
-                    renderMedalIcons();
-
                     showModal("🎉 チュートリアル完全クリア！", "おめでとうございます！これで全基本ルールをマスターしました！\n\n【💡 既読スルー(親)の成功効果】\n① 10点到達をなかったことにする\n② 成功ボーナスとして「自分に1ポイント」入る\n③ ゴールが20に延長され、以降の勝利ポイントが「2倍(2pt)」になる\n\n他のモードを選択して実際の勝負に挑戦してみましょう！", "🏆", "モード選択に戻る", () => {
                         tutorialStep = 0;
                         document.getElementById('mode-select-overlay').classList.remove('hidden');
@@ -1242,7 +1520,6 @@
             }).join('');
         }
 
-        // コールバック関数を安全に実行する設計に改良したモーダル表示処理
         function showModal(title, body, icon, btnText = "次へ", onConfirm = null) {
             document.getElementById('modal-icon').innerText = icon;
             document.getElementById('modal-title').innerText = title;
@@ -1252,7 +1529,6 @@
             btn.innerText = btnText;
             document.getElementById('modal').classList.remove('hidden');
             
-            // 古いイベントリスナーの干渉を防ぐために完全に新規で関数を割り当て
             btn.onclick = () => {
                 document.getElementById('modal').classList.add('hidden');
                 if (onConfirm) {
@@ -1261,21 +1537,11 @@
             };
         }
 
-        function saveHighestRank(mode, rank) {
-            const currentHighest = highestRanks[mode];
-            if (!currentHighest || rank < currentHighest) {
-                highestRanks[mode] = rank;
-                saveLocalMedals();
-                renderMedalIcons();
-            }
-        }
-
         function showFinalResult() {
             const rankedPlayers = players.map((p, i) => ({ ...p, score: scores[i] })).sort((a, b) => b.score - a.score);
             
             let rankHtml = `<div class="text-sm font-bold text-gray-500 mb-4">全4ラウンド終了！最終順位の発表です！</div>`;
 
-            // 自分(あなた)の順位を正確に算出
             const playerRankIdx = rankedPlayers.findIndex(p => p.id === 0);
             let playerRank = 1;
             if (playerRankIdx > 0) {
@@ -1288,47 +1554,42 @@
                 playerRank = tempRank;
             }
 
-            // 自己ベスト順位を保存
-            saveHighestRank(gameMode, playerRank);
-
-            // ★ 新解禁判定：エキスパートで「単独」1位の場合のみマスター解禁
-            // (自分のスコアが、他のすべてのCPUのスコアを厳密に上回っていること)
             const myFinalScore = scores[0];
             const isSoloExpertWin = (myFinalScore > scores[1] && myFinalScore > scores[2] && myFinalScore > scores[3]);
 
             if (gameMode === 'expert' && isSoloExpertWin && !isMasterUnlocked) {
-                localStorage.setItem('master_unlocked_2026', 'true');
                 isMasterUnlocked = true;
                 checkMasterLockState();
-                
                 document.getElementById('unlock-popup').classList.remove('hidden');
             }
 
-            // ★ レート変動ロジック (マスターモードのみ)
             let ratingChangeMsg = "";
-            if (gameMode === 'master') {
-                let ratingChange = 0;
-                if (playerRank === 1) {
-                    ratingChange = 30;
-                    ratingChangeMsg = `<div class="text-xs text-green-600 font-bold mt-2 text-center">🏆 レートアップ！ <b>+30 R</b></div>`;
-                } else if (playerRank === 2) {
-                    ratingChange = 10;
-                    ratingChangeMsg = `<div class="text-xs text-green-500 font-bold mt-2 text-center">📈 レートアップ！ <b>+10 R</b></div>`;
-                } else if (playerRank === 3) {
-                    ratingChange = -10;
-                    ratingChangeMsg = `<div class="text-xs text-red-400 font-bold mt-2 text-center">📉 レートダウン... <b>-10 R</b></div>`;
-                } else if (playerRank === 4) {
-                    ratingChange = -30;
-                    ratingChangeMsg = `<div class="text-xs text-red-600 font-bold mt-2 text-center">💥 レートダウン... <b>-30 R</b></div>`;
-                }
+            if (gameMode !== 'tutorial') {
+                const earnedPR = calculatePR(playerRank, myFinalScore);
+                
+                // 【変更点】順位と獲得ポイントも履歴に保存するように拡張
+                userHistory.push({
+                    date: new Date().toISOString(),
+                    pr: earnedPR,
+                    mode: gameMode,
+                    rank: playerRank,
+                    points: myFinalScore
+                });
 
-                // 反映 (レートは0未満にならないように調整)
-                userTotalPoints = Math.max(0, userTotalPoints + ratingChange);
+                const oldTotalRate = userRatings[gameMode];
+                recalculateRates();
+                const newTotalRate = userRatings[gameMode];
+                const difference = newTotalRate - oldTotalRate;
+
+                if (difference > 0) {
+                    ratingChangeMsg = `<div class="text-xs text-green-600 font-bold mt-2 text-center">🏆 記録更新！ レート <b>+${difference} R</b></div>`;
+                } else {
+                    ratingChangeMsg = `<div class="text-xs text-slate-400 font-bold mt-2 text-center">マイベスト更新ならず（変動なし）</div>`;
+                }
+                
                 saveProfileData();
                 updateProfileUI();
-                sendScoreToGAS(); // スプレッドシート(GAS)に最新レートを送信
-            } else {
-                ratingChangeMsg = `<div class="text-[10px] text-gray-400 font-bold mt-2 text-center">※レートは「マスターモード」でのみ変動します</div>`;
+                sendHistoryToGAS();
             }
 
             rankHtml += `<div class="flex flex-col gap-2 mb-4 text-left">`;
@@ -1356,7 +1617,6 @@
             rankHtml += `</div>`;
             rankHtml += ratingChangeMsg;
 
-            // 結果モーダルの表示
             showModal("結果発表", rankHtml, "🎊", "モード選択に戻る", () => {
                 document.getElementById('mode-select-overlay').classList.remove('hidden');
                 document.getElementById('plot-area').classList.add('opacity-50', 'pointer-events-none');
