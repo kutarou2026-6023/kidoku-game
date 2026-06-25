@@ -131,7 +131,7 @@
             <h2 class="text-2xl font-black text-gray-800 mb-1 mt-10">ゲームモード選択</h2>
             <p class="text-xs text-gray-500 mb-4 text-center">遊び方を選択してください</p>
 
-            <!-- プロフィール編集カード（全モードのレート表示ボタン化） -->
+            <!-- プロフィール編集カード -->
             <div class="w-full bg-slate-100 p-3 rounded-2xl mb-4 border border-slate-200 flex flex-col items-center">
                 <div class="flex items-center gap-2 mb-1 justify-center">
                     <span id="player-profile-name" class="font-black text-slate-800 text-sm">プレイヤー</span>
@@ -223,7 +223,7 @@
         <div id="rate-detail-modal" class="absolute inset-0 bg-black/80 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
             <div class="bg-white rounded-[2rem] p-5 max-w-sm w-full text-center shadow-2xl flex flex-col max-h-[85vh]">
                 <h2 id="rd-title" class="text-xl font-black mb-1 text-gray-800">モード レート詳細</h2>
-                <div class="text-3xl font-black text-blue-600 mb-3"><span id="rd-total">0</span> <span class="text-sm text-gray-400 font-bold">R</span></div>
+                <div class="text-3xl font-black text-blue-600 mb-3"><span id="rd-total">0</span></div>
                 
                 <div id="rd-border-container"></div>
                 
@@ -312,9 +312,9 @@
                     </div>
                     <!-- 期間切り替えタブ -->
                     <div class="flex gap-1" id="rank-period-tabs">
-                        <button onclick="changeRankPeriod('total')" id="rp-total" class="tab-btn tab-period-active text-[10px] flex-1 shadow-sm">総合(ベスト20枠)</button>
-                        <button onclick="changeRankPeriod('this_week')" id="rp-this_week" class="tab-btn tab-period-inactive text-[10px] flex-1">今週(獲得PR)</button>
-                        <button onclick="changeRankPeriod('last_week')" id="rp-last_week" class="tab-btn tab-period-inactive text-[10px] flex-1">先週(獲得PR)</button>
+                        <button onclick="changeRankPeriod('total')" id="rp-total" class="tab-btn tab-period-active text-[10px] flex-1 shadow-sm">総合(ベスト8枠)</button>
+                        <button onclick="changeRankPeriod('this_week')" id="rp-this_week" class="tab-btn tab-period-inactive text-[10px] flex-1">今週(ベスト3枠)</button>
+                        <button onclick="changeRankPeriod('last_week')" id="rp-last_week" class="tab-btn tab-period-inactive text-[10px] flex-1">先週(ベスト3枠)</button>
                     </div>
                 </div>
                 
@@ -378,7 +378,6 @@
         // --- セーブデータ関連 ---
         let userShortId = "";
         let userNickname = "プレイヤー";
-        // 全プレイ履歴を保存する配列（{ date, pr, mode, rank, points } の形式）
         let userHistory = []; 
         let userRatings = { casual: 0, normal: 0, expert: 0, master: 0 };
         let isMasterUnlocked = false;
@@ -427,8 +426,8 @@
                     const data = await response.json();
                     cachedLeaderboardData = data;
 
-                    const myFullName = `${userNickname}#${userShortId}`;
-                    const myCloudData = data.find(p => p.name === myFullName);
+                    // ★ 名前ではなく「ID」でクラウド上の自分のデータを探すように変更！
+                    const myCloudData = data.find(p => p.id === userShortId);
                     
                     if (myCloudData && myCloudData.history) {
                         userHistory = myCloudData.history;
@@ -482,21 +481,14 @@
         // レート計算＆週の切り替えロジック
         // ==========================================
         
-        // 週の計算（月曜午前5時切り替え）
         function getWeekRanges() {
             const now = new Date();
-            // 現在時刻から5時間引くことで、月曜0:00〜4:59を日曜扱いにする
             const shiftedNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
-            const dayOfWeek = shiftedNow.getDay() || 7; // 日曜(0)を7とする
-            
-            // 基準となる月曜日の0:00を計算
+            const dayOfWeek = shiftedNow.getDay() || 7; 
             const thisMondayShifted = new Date(shiftedNow.getFullYear(), shiftedNow.getMonth(), shiftedNow.getDate() - dayOfWeek + 1);
             thisMondayShifted.setHours(0, 0, 0, 0);
-            
-            // 実際の週の切り替えタイミングは、その月曜日の午前5時
             const thisWeekStart = new Date(thisMondayShifted.getTime() + 5 * 60 * 60 * 1000);
             const lastWeekStart = new Date(thisWeekStart.getTime() - 7 * 24 * 60 * 60 * 1000);
-            
             return {
                 thisWeekStart: thisWeekStart,
                 lastWeekStart: lastWeekStart,
@@ -504,29 +496,28 @@
             };
         }
 
+        // ★ 計算式を「平均1000、理論値1600」に大幅調整
         function calculatePR(rank, points) {
             let base = 0;
             let bonus = 0;
-            if (rank === 1) { base = 40; bonus = points * 10; }
-            else if (rank === 2) { base = 25; bonus = points * 5; }
-            else if (rank === 3) { base = 15; bonus = points * 2; }
-            else if (rank === 4) { base = 5; bonus = 0; }
+            if (rank === 1) { base = 120; bonus = points * 10; } // 8pt獲得時: 120 + 80 = 200
+            else if (rank === 2) { base = 90; bonus = points * 8; }
+            else if (rank === 3) { base = 60; bonus = points * 5; }
+            else if (rank === 4) { base = 30; bonus = 0; }
             return base + bonus;
         }
 
-        // 指定したモードの履歴から直近枠と歴代枠を抽出する共通関数
         function getModeHistoryDetail(mode) {
             const ranges = getWeekRanges();
             const modeHistory = userHistory.filter(h => h.mode === mode);
             
-            // 月曜午前5時切り替えに基づく「先週」の開始日時以降を直近枠の対象とする
             const recent = modeHistory.filter(h => new Date(h.date) >= ranges.lastWeekStart).sort((a, b) => b.pr - a.pr);
             const older = modeHistory.filter(h => new Date(h.date) < ranges.lastWeekStart);
             
-            const bestRecent = recent.slice(0, 5);
-            const remainingRecent = recent.slice(5);
+            const bestRecent = recent.slice(0, 3);
+            const remainingRecent = recent.slice(3);
             const allOlder = older.concat(remainingRecent).sort((a, b) => b.pr - a.pr);
-            const bestOlder = allOlder.slice(0, 15);
+            const bestOlder = allOlder.slice(0, 5);
             
             let totalPR = 0;
             bestRecent.forEach(h => totalPR += h.pr);
@@ -545,7 +536,8 @@
         function sendHistoryToGAS() {
             if (!GAS_URL) return;
             const postData = {
-                name: `${userNickname}#${userShortId}`,
+                id: userShortId, // ★ IDを独立して送信する
+                name: `${userNickname}#${userShortId}`, // 表示用の名前
                 history: userHistory
             };
 
@@ -571,26 +563,25 @@
             document.getElementById('rd-title').innerText = `${modeNames[mode]} レート詳細`;
             document.getElementById('rd-total').innerText = detail.totalPR;
             
-            // ボーダーラインの計算
             let borderPR = 0;
-            if (detail.bestRecent.length + detail.bestOlder.length >= 20) {
-                const all20 = [...detail.bestRecent, ...detail.bestOlder].sort((a, b) => a.pr - b.pr);
-                borderPR = all20[0].pr; 
+            if (detail.bestRecent.length + detail.bestOlder.length >= 8) {
+                const all8 = [...detail.bestRecent, ...detail.bestOlder].sort((a, b) => a.pr - b.pr);
+                borderPR = all8[0].pr; 
             }
 
             let borderHtml = `<div class="text-[10px] text-slate-600 bg-blue-50 p-3 rounded-xl mb-4 text-left font-bold border border-blue-100 shadow-inner">`;
             if (borderPR === 0) {
-                borderHtml += `<div class="flex items-center gap-2 mb-1"><span class="text-xl">✨</span> <span class="text-blue-700 text-xs">ボーダー：0 PR</span></div>
-                <span class="text-slate-500">（マイベスト20枠に空きがあります！）<br>どんな結果でもプレイすれば必ずレートが加算されます。</span>`;
+                borderHtml += `<div class="flex items-center gap-2 mb-1"><span class="text-xl">✨</span> <span class="text-blue-700 text-xs">ボーダー：0</span></div>
+                <span class="text-slate-500">（マイベスト8枠に空きがあります！）<br>どんな結果でもプレイすれば必ずレートが加算されます。</span>`;
             } else {
-                borderHtml += `<div class="flex items-center gap-2 mb-2"><span class="text-xl">🔥</span> <span class="text-red-600 text-xs">更新ボーダー：${borderPR} PR 超え</span></div>
+                borderHtml += `<div class="flex items-center gap-2 mb-2"><span class="text-xl">🔥</span> <span class="text-red-600 text-xs">更新ボーダー：${borderPR} 超え</span></div>
                 <span class="text-[9px] text-slate-500 font-normal">以下のいずれかの結果を出せばレートが上がります。</span>
                 <div class="mt-2 grid grid-cols-3 gap-1.5 text-center">`;
                 
-                // 1位〜3位の必要ポイントを逆算して表示
                 for (let r = 1; r <= 3; r++) {
                     let neededPoints = -1;
-                    for (let p = 0; p <= 30; p++) {
+                    // 最大8ptとして計算（9pt以上は実質不可）
+                    for (let p = 0; p <= 8; p++) {
                         if (calculatePR(r, p) > borderPR) {
                             neededPoints = p;
                             break;
@@ -607,14 +598,13 @@
             borderHtml += `</div>`;
             document.getElementById('rd-border-container').innerHTML = borderHtml;
 
-            // リストの生成
-            let listHtml = `<h4 class="text-[11px] font-black text-slate-700 mb-2 border-b border-slate-200 pb-1 text-left">直近枠（今週・先週のベスト5）</h4>`;
+            let listHtml = `<h4 class="text-[11px] font-black text-slate-700 mb-2 border-b border-slate-200 pb-1 text-left">直近枠（今週・先週のベスト3）</h4>`;
             if (detail.bestRecent.length === 0) listHtml += `<p class="text-xs text-slate-400 mb-4 text-left">データなし</p>`;
             detail.bestRecent.forEach((h, i) => {
                 listHtml += generateHistoryItemHtml(h, `直近${i+1}`);
             });
             
-            listHtml += `<h4 class="text-[11px] font-black text-slate-700 mb-2 mt-4 border-b border-slate-200 pb-1 text-left">歴代枠（それ以外のベスト15）</h4>`;
+            listHtml += `<h4 class="text-[11px] font-black text-slate-700 mb-2 mt-4 border-b border-slate-200 pb-1 text-left">歴代枠（それ以外のベスト5）</h4>`;
             if (detail.bestOlder.length === 0) listHtml += `<p class="text-xs text-slate-400 mb-4 text-left">データなし</p>`;
             detail.bestOlder.forEach((h, i) => {
                 listHtml += generateHistoryItemHtml(h, `歴代${i+1}`);
@@ -638,11 +628,10 @@
                         <span class="text-[9px] font-black text-white bg-slate-500 px-1.5 py-0.5 rounded-sm w-9 text-center">${label}</span>
                         <span class="text-[11px] font-black text-slate-700">${rankStr} <span class="text-[10px] text-slate-400 mx-0.5">/</span> ${ptStr}</span>
                     </div>
-                    <div class="text-sm font-black text-blue-600">${prStr} <span class="text-[9px] text-slate-400 font-bold">PR</span></div>
+                    <div class="text-sm font-black text-blue-600">${prStr}</div>
                 </div>
             `;
         }
-
 
         // ==========================================
         // 多機能ランキング処理
@@ -676,9 +665,9 @@
             });
             
             const desc = document.getElementById('leaderboard-desc');
-            if (period === 'total') desc.innerText = "上位20枠(直近5+歴代15)の総合実力レート";
-            if (period === 'this_week') desc.innerText = "今週(月曜5時〜)に稼いだPRの総獲得量";
-            if (period === 'last_week') desc.innerText = "先週稼いだPRの総獲得量";
+            if (period === 'total') desc.innerText = "上位8枠(直近3+歴代5)の総合レート";
+            if (period === 'this_week') desc.innerText = "今週(月曜5時〜)のベスト3枠合計";
+            if (period === 'last_week') desc.innerText = "先週のベスト3枠合計";
 
             renderLeaderboard();
         }
@@ -698,26 +687,25 @@
                 let scoreForRanking = 0;
 
                 if (currentRankPeriod === 'total') {
-                    // 月曜5時切り替えに合わせた直近枠の抽出
                     const recent = modeHistory.filter(h => new Date(h.date) >= ranges.lastWeekStart).sort((a, b) => b.pr - a.pr);
                     const older = modeHistory.filter(h => new Date(h.date) < ranges.lastWeekStart);
-                    const bestRecent = recent.slice(0, 5);
-                    const allOlder = older.concat(recent.slice(5)).sort((a, b) => b.pr - a.pr);
-                    const bestOlder = allOlder.slice(0, 15);
+                    const bestRecent = recent.slice(0, 3);
+                    const allOlder = older.concat(recent.slice(3)).sort((a, b) => b.pr - a.pr);
+                    const bestOlder = allOlder.slice(0, 5);
                     
                     bestRecent.forEach(h => scoreForRanking += h.pr);
                     bestOlder.forEach(h => scoreForRanking += h.pr);
                 } 
                 else if (currentRankPeriod === 'this_week') {
-                    modeHistory.forEach(h => {
-                        if (new Date(h.date) >= ranges.thisWeekStart) scoreForRanking += h.pr;
-                    });
+                    const thisWeekRecords = modeHistory.filter(h => new Date(h.date) >= ranges.thisWeekStart).sort((a, b) => b.pr - a.pr);
+                    thisWeekRecords.slice(0, 3).forEach(h => scoreForRanking += h.pr);
                 } 
                 else if (currentRankPeriod === 'last_week') {
-                    modeHistory.forEach(h => {
+                    const lastWeekRecords = modeHistory.filter(h => {
                         const d = new Date(h.date);
-                        if (d >= ranges.lastWeekStart && d < ranges.lastWeekEnd) scoreForRanking += h.pr;
-                    });
+                        return d >= ranges.lastWeekStart && d < ranges.lastWeekEnd;
+                    }).sort((a, b) => b.pr - a.pr);
+                    lastWeekRecords.slice(0, 3).forEach(h => scoreForRanking += h.pr);
                 }
 
                 if (scoreForRanking > 0) {
@@ -735,7 +723,6 @@
                 const nameParts = p.name.split('#');
                 const displayName = nameParts[0] || "不明";
                 const displayId = nameParts[1] ? `#${nameParts[1]}` : "";
-                const unit = currentRankPeriod === 'total' ? 'R' : 'PR';
                 
                 html += `
                     <div class="flex justify-between items-center p-3 border-b border-gray-100 ${isMe ? 'bg-yellow-50 rounded-lg border border-yellow-200 shadow-sm' : ''}">
@@ -746,7 +733,7 @@
                                 ${isMe ? '<span class="text-[8px] bg-yellow-400 text-yellow-900 px-1 py-0.5 rounded ml-1 flex-shrink-0 font-black">YOU</span>' : ''}
                             </span>
                         </div>
-                        <span class="font-black text-blue-600 text-sm flex-shrink-0">${p.score} <span class="text-[9px] text-gray-400 font-normal">${unit}</span></span>
+                        <span class="font-black text-blue-600 text-sm flex-shrink-0">${p.score}</span>
                     </div>
                 `;
             });
@@ -777,8 +764,8 @@
                 
                 cachedLeaderboardData = await response.json();
                 
-                const myFullName = `${userNickname}#${userShortId}`;
-                const myCloudData = cachedLeaderboardData.find(p => p.name === myFullName);
+                // ★ ランキングを開いたときも「ID」で自分の最新データを同期する
+                const myCloudData = cachedLeaderboardData.find(p => p.id === userShortId);
                 if (myCloudData && myCloudData.history) {
                     userHistory = myCloudData.history;
                     recalculateRates();
@@ -1567,7 +1554,6 @@
             if (gameMode !== 'tutorial') {
                 const earnedPR = calculatePR(playerRank, myFinalScore);
                 
-                // 【変更点】順位と獲得ポイントも履歴に保存するように拡張
                 userHistory.push({
                     date: new Date().toISOString(),
                     pr: earnedPR,
@@ -1582,7 +1568,7 @@
                 const difference = newTotalRate - oldTotalRate;
 
                 if (difference > 0) {
-                    ratingChangeMsg = `<div class="text-xs text-green-600 font-bold mt-2 text-center">🏆 記録更新！ レート <b>+${difference} R</b></div>`;
+                    ratingChangeMsg = `<div class="text-xs text-green-600 font-bold mt-2 text-center">🏆 記録更新！ レート <b>+${difference}</b></div>`;
                 } else {
                     ratingChangeMsg = `<div class="text-xs text-slate-400 font-bold mt-2 text-center">マイベスト更新ならず（変動なし）</div>`;
                 }
