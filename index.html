@@ -855,24 +855,17 @@
                     } 
                     else if (currentRankPeriod === 'last_week') {
                         const lastWeekRecords = modeHistory.filter(h => {
-                        const d = new Date(h.date);
-                        return d >= ranges.lastWeekStart && d < ranges.lastWeekEnd;
-                    }).sort((a, b) => b.pr - a.pr);
-                    lastWeekRecords.slice(0, 3).forEach(h => scoreForRanking += h.pr);
-                }
-
-                if (scoreForRanking > 0) {
-                    // ★追加：スプレッドシートに同じIDの行が複数存在しても、ランキングには1つしか表示させない（重複排除）
-                    const existingPlayer = playerScores.find(p => p.id === player.id);
-                    if (!existingPlayer) {
-                        playerScores.push({ id: player.id, name: player.name, score: scoreForRanking });
-                    } else if (scoreForRanking > existingPlayer.score) {
-                        // もし重複行があり、スコアが高い方があれば上書きする
-                        existingPlayer.score = scoreForRanking;
-                        existingPlayer.name = player.name;
+                            const d = new Date(h.date);
+                            return d >= ranges.lastWeekStart && d < ranges.lastWeekEnd;
+                        }).sort((a, b) => b.pr - a.pr);
+                        lastWeekRecords.slice(0, 3).forEach(h => scoreForRanking += h.pr);
                     }
-                }
-            });
+
+                    if (scoreForRanking > 0) {
+                        // ★修正：スプレッドシート（サーバー）側で自動マージされるため、HTML側の応急処置フィルターは撤去し、素直にプッシュする
+                        playerScores.push({ id: player.id, name: player.name, score: scoreForRanking });
+                    }
+                });
             }
 
             // レート順に降順ソート
