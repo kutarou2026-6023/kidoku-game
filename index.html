@@ -125,7 +125,7 @@
                         ℹ️ バージョン情報
                     </button>
                     <!-- 公式ガイドボタン -->
-                    <button onclick="openOfficialGuide()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-full shadow-sm transition active:scale-95 flex items-center justify-center border border-blue-200 text-[10px] font-black tracking-wider" title="公式ルール・攻略ガイドを見る">
+                    <button id="official-guide-btn" onclick="openOfficialGuide()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-2 rounded-full shadow-sm transition active:scale-95 flex items-center justify-center border border-blue-200 text-[10px] font-black tracking-wider" title="公式ルール・攻略ガイドを見る">
                         📖 公式ガイド
                     </button>
                     <!-- リセットボタン -->
@@ -138,7 +138,7 @@
             </div>
 
             <!-- タイトル上部に現在のバージョンを表記 -->
-            <div class="text-[9px] text-gray-400 font-bold bg-gray-100 px-2 py-0.5 rounded-full mt-4">Ver 1.1.1</div>
+            <div class="text-[9px] text-gray-400 font-bold bg-gray-100 px-2 py-0.5 rounded-full mt-4">Ver 1.2.0 (2026/07/07更新)</div>
 
             <h2 class="text-2xl font-black text-gray-800 mb-1 mt-2">ゲームモード選択</h2>
             <p class="text-xs text-gray-500 mb-4 text-center">遊び方を選択してください</p>
@@ -159,22 +159,27 @@
                 </div>
                 <div class="text-[10px] text-slate-500 font-bold mt-1">マイベスト (タップして詳細とボーダーを確認)</div>
                 <div class="grid grid-cols-2 gap-2 mt-1.5 w-full">
-                    <button onclick="openRateDetailModal('casual')" class="bg-cyan-50 text-cyan-700 border border-cyan-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
+                    <button id="rate-detail-btn-casual" onclick="openRateDetailModal('casual')" class="bg-cyan-50 text-cyan-700 border border-cyan-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
                         カジュアル: <span id="rate-casual">0</span>
                     </button>
-                    <button onclick="openRateDetailModal('normal')" class="bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
+                    <button id="rate-detail-btn-normal" onclick="openRateDetailModal('normal')" class="bg-yellow-50 text-yellow-700 border border-yellow-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
                         ノーマル: <span id="rate-normal">0</span>
                     </button>
-                    <button onclick="openRateDetailModal('expert')" class="bg-red-50 text-red-700 border border-red-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
+                    <button id="rate-detail-btn-expert" onclick="openRateDetailModal('expert')" class="bg-red-50 text-red-700 border border-red-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
                         エキスパート: <span id="rate-expert">0</span>
                     </button>
-                    <button onclick="openRateDetailModal('master')" class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
+                    <button id="rate-detail-btn-master" onclick="openRateDetailModal('master')" class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition">
                         マスター: <span id="rate-master">0</span>
+                    </button>
+                    
+                    <!-- レジェンド：解禁されるまで非表示 -->
+                    <button id="rate-detail-btn-legend" onclick="openRateDetailModal('legend')" class="col-span-2 bg-gradient-to-r from-slate-900 to-indigo-900 text-indigo-200 border border-indigo-500 px-2 py-2 rounded-lg text-xs font-black text-center shadow-sm active:scale-95 transition hidden">
+                        レジェンド: <span id="rate-legend">0</span>
                     </button>
                 </div>
             </div>
 
-            <!-- 🌟 バグ報告 ＆ 要望フォーム ボタン (プロフィール編集カードの直下に設置) -->
+            <!-- バグ報告 ＆ 要望フォーム ボタン (プロフィール編集カードの直下に設置) -->
             <div class="flex flex-col gap-2 mb-4 w-full">
                 <button onclick="openBugReport()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-3 px-4 rounded-2xl shadow-sm active:scale-95 transition flex items-center justify-between border border-red-200">
                     <div class="flex items-center gap-3">
@@ -238,18 +243,31 @@
                 </button>
 
                 <!-- 4. マスター -->
-                <button id="btn-master" onclick="clickMasterMode()" class="w-full bg-slate-900 border-2 border-purple-500 p-3.5 rounded-2xl shadow-xl active:scale-95 transition text-left relative overflow-visible opacity-50">
+                <button id="btn-master" onclick="clickMasterMode()" class="w-full bg-slate-100 border-2 border-slate-300 p-3.5 rounded-2xl shadow-xl active:scale-95 transition text-left relative overflow-visible opacity-50">
                     <div class="absolute -right-2 -top-2 text-4xl opacity-10">🔒</div>
                     <div class="flex items-start gap-3 mb-1 relative z-10">
-                        <span id="master-lock-icon" class="bg-purple-600 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">🔒</span>
+                        <span id="master-lock-icon" class="bg-slate-400 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">🔒</span>
                         <div>
-                            <h3 class="text-sm font-black text-purple-400 leading-tight flex items-center gap-1.5">
+                            <h3 class="text-sm font-black text-slate-500 leading-tight flex items-center gap-1.5">
                                 マスターモード 
                             </h3>
-                            <span id="master-tag" class="inline-block font-black tracking-widest text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-1">エキスパート単独1位で解禁</span>
+                            <span id="master-tag" class="inline-block font-black tracking-widest text-[8px] bg-slate-400 text-white px-1.5 py-0.5 rounded-full mt-1">エキスパート単独1位で解禁</span>
                         </div>
                     </div>
                     <p id="master-desc" class="text-[9px] text-gray-500 font-bold mt-1 relative z-10 leading-relaxed">???</p>
+                </button>
+
+                <!-- 5. レジェンド（解禁されるまで非表示） -->
+                <button id="btn-legend" onclick="startGame('legend')" class="w-full bg-gradient-to-r from-slate-900 to-indigo-900 border-2 border-indigo-500 p-3.5 rounded-2xl shadow-xl active:scale-95 transition text-left relative overflow-visible hidden">
+                    <div class="absolute -right-4 -top-4 text-4xl opacity-20">🌌</div>
+                    <div class="flex items-start gap-3 mb-1 relative z-10">
+                        <span class="bg-indigo-600 text-white text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">5</span>
+                        <div>
+                            <h3 class="text-sm font-black text-indigo-300 leading-tight">レジェンドモード</h3>
+                            <span class="inline-block font-black tracking-widest text-[8px] bg-indigo-500 text-white px-1.5 py-0.5 rounded-full mt-1">神々の領域</span>
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-indigo-200/80 font-bold mt-1 relative z-10 leading-relaxed">最高峰のAIが立ちはだかる究極の頭脳戦。すべてを読み切り、生還せよ。</p>
                 </button>
             </div>
 
@@ -294,7 +312,10 @@
                 
                 <!-- バージョン切り替え用タブ -->
                 <div class="flex gap-2 mb-4 bg-slate-50 p-1.5 rounded-xl border border-slate-200 overflow-x-auto">
-                    <button onclick="selectVersion('v111')" id="vbtn-v111" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all bg-slate-900 text-white shadow-sm">Ver 1.1.1</button>
+                    <button onclick="selectVersion('v120')" id="vbtn-v120" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all bg-slate-900 text-white shadow-sm">Ver 1.2.0<br><span class="text-[8px] font-normal text-slate-300">2026/07/07</span></button>
+                    <button onclick="selectVersion('v112')" id="vbtn-v112" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.1.2</button>
+                    <button onclick="selectVersion('v111')" id="vbtn-v111" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.1.1</button>
+                    <button onclick="selectVersion('v110')" id="vbtn-v110" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.1.0<br><span class="text-[8px] font-normal text-slate-400">2026/06/30</span></button>
                     <button onclick="selectVersion('v100')" id="vbtn-v100" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.0.0</button>
                 </div>
 
@@ -377,7 +398,8 @@
                         <button onclick="changeRankMode('casual')" id="rm-casual" class="tab-btn tab-mode-inactive text-[10px] flex-1">カジュアル</button>
                         <button onclick="changeRankMode('normal')" id="rm-normal" class="tab-btn tab-mode-inactive text-[10px] flex-1">ノーマル</button>
                         <button onclick="changeRankMode('expert')" id="rm-expert" class="tab-btn tab-mode-inactive text-[10px] flex-1">エキスパート</button>
-                        <button onclick="changeRankMode('master')" id="rm-master" class="tab-btn tab-mode-active text-[10px] flex-1 shadow-sm">マスター</button>
+                        <button onclick="changeRankMode('master')" id="rm-master" class="tab-btn tab-mode-inactive text-[10px] flex-1">マスター</button>
+                        <button onclick="changeRankMode('legend')" id="rm-legend" class="tab-btn tab-mode-active text-[10px] flex-1 shadow-sm hidden">レジェンド</button>
                     </div>
                     <div class="flex gap-1" id="rank-period-tabs">
                         <button onclick="changeRankPeriod('total')" id="rp-total" class="tab-btn tab-period-active text-[10px] flex-1 shadow-sm">総合(ベスト8枠)</button>
@@ -473,7 +495,8 @@
                             <li>4位: 30 ＋ 0</li>
                         </ul>
                         <div class="text-[10px] text-slate-300 font-bold mt-2 border-t border-slate-700 pt-2 text-left">
-                            <span class="text-yellow-300 block text-center mb-1">最高レート理論値は 【1600】！</span>
+                            <span class="text-yellow-300 block text-center mb-1">最高レート理論値は 【1680】！</span>
+                            <span class="text-[9px] block text-center mb-2 text-slate-400">（※全て1位かつ9pt獲得で染めた場合）</span>
                             🌱 〜300: 水色<br>
                             🌱 301〜500: 緑<br>
                             🎯 501〜800: 黄色<br>
@@ -495,15 +518,11 @@
                 
                 <div class="relative z-10">
                     <div class="text-6xl mb-4 drop-shadow-[0_0_15px_rgba(168,85,247,0.8)] animate-bounce">🔥</div>
-                    <h2 class="text-xl font-black text-yellow-300 mb-4 tracking-wider">限界を越えた者への招待</h2>
-                    <p class="text-xs text-purple-100 font-bold leading-relaxed mb-6">
+                    <h2 class="text-xl font-black text-yellow-300 mb-4 tracking-wider" id="unlock-popup-title">限界を越えた者への招待</h2>
+                    <p class="text-xs text-purple-100 font-bold leading-relaxed mb-6" id="unlock-popup-desc">
                         真の混沌（カオス）が幕を開ける――。<br>
                         最難関『マスターモード』の封印が解かれました。
                     </p>
-                    <div class="bg-black/60 py-3 px-4 rounded-xl border border-purple-700 mb-6 shadow-inner">
-                        <span class="text-[10px] text-purple-300 font-bold block mb-1">他端末用 解禁パスワード</span>
-                        <span class="text-lg font-black tracking-widest text-white drop-shadow-md">KIDOKU_M_2026</span>
-                    </div>
                     <button onclick="closeUnlockPopup()" class="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white font-black py-4 rounded-xl active:scale-95 transition-all text-sm shadow-lg shadow-purple-500/50 border border-purple-300">
                         確認して結果へ進む
                     </button>
@@ -513,7 +532,7 @@
 
         <!-- 結果モーダル -->
         <div id="modal" class="absolute inset-0 bg-black/70 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl flex flex-col h-[85vh]">
                 <div id="modal-icon" class="text-5xl mb-2 flex-shrink-0">🏆</div>
                 <h2 id="modal-title" class="text-2xl font-black mb-2 text-gray-800 flex-shrink-0">タイトル</h2>
                 <div id="modal-body" class="text-gray-500 mb-4 font-medium whitespace-pre-wrap text-sm leading-relaxed text-left flex-1 overflow-y-auto px-1"></div>
@@ -540,8 +559,9 @@
         let userShortId = ""; // 重複のないランダム5桁ID
         let userNickname = "プレイヤー"; // 初期名はシンプルに「プレイヤー」
         let userHistory = []; 
-        let userRatings = { casual: 0, normal: 0, expert: 0, master: 0 };
+        let userRatings = { casual: 0, normal: 0, expert: 0, master: 0, legend: 0 };
         let isMasterUnlocked = false;
+        let isLegendUnlocked = false;
 
         // --- ランキング用変数 ---
         let cachedLeaderboardData = [];
@@ -554,6 +574,7 @@
         const DECK_NORMAL = [1,1,1,1, 2,2,2,2, 3,3,3,3, 0, 'M', 'C']; 
         const DECK_EXPERT = [1,1, 2,2, 3,3, 0, 'M', 'C']; 
         const DECK_MASTER = [1,1, 2,2, 3,3, 0, 'M', 'C', 'U', 'B']; 
+        const DECK_LEGEND = [1,1, 2,2, 3,3, 0, 'M', 'C', 'U', 'B']; 
         const DECK_TUTORIAL = [1, 2, 3, 'C']; 
 
         const UNLOCK_PASSWORD = "KIDOKU_M_2026";
@@ -576,6 +597,7 @@
                 userNickname = p.name;
                 userHistory = p.history || [];
                 if (p.isMasterUnlocked) isMasterUnlocked = true;
+                if (p.isLegendUnlocked) isLegendUnlocked = true;
             }
 
             try {
@@ -594,6 +616,14 @@
                     const myCloudData = data.find(p => p.id === userShortId);
                     if (myCloudData && myCloudData.history) {
                         userHistory = myCloudData.history;
+                        
+                        // 🌟 【バグ修正】過去の古いPRデータを最新の計算式で一括上書き再計算する
+                        userHistory.forEach(h => {
+                            if (h.rank !== undefined && h.points !== undefined) {
+                                h.pr = calculatePR(h.rank, h.points);
+                            }
+                        });
+
                         document.getElementById('loading-status').innerText = "クラウドから復元しました！";
                     } else {
                         document.getElementById('loading-status').innerText = "新規セーブデータを作成しました";
@@ -616,7 +646,7 @@
             recalculateRates();
             saveProfileData();
             updateProfileUI();
-            checkMasterLockState();
+            checkUnlocks();
 
             setTimeout(() => {
                 const loading = document.getElementById('loading-overlay');
@@ -650,7 +680,8 @@
                 id: userShortId, 
                 name: userNickname, 
                 history: userHistory,
-                isMasterUnlocked: isMasterUnlocked
+                isMasterUnlocked: isMasterUnlocked,
+                isLegendUnlocked: isLegendUnlocked
             };
             localStorage.setItem('kidoku_profile_best_2026', JSON.stringify(data));
         }
@@ -660,10 +691,13 @@
             document.getElementById('player-profile-name').innerText = userNickname;
             document.getElementById('player-profile-id').innerText = `#${userShortId}`;
             
-            document.getElementById('rate-casual').innerText = userRatings.casual;
-            document.getElementById('rate-normal').innerText = userRatings.normal;
-            document.getElementById('rate-expert').innerText = userRatings.expert;
-            document.getElementById('rate-master').innerText = userRatings.master;
+            document.getElementById('rate-casual').innerText = userRatings.casual || 0;
+            document.getElementById('rate-normal').innerText = userRatings.normal || 0;
+            document.getElementById('rate-expert').innerText = userRatings.expert || 0;
+            document.getElementById('rate-master').innerText = userRatings.master || 0;
+            
+            const rl = document.getElementById('rate-legend');
+            if (rl) rl.innerText = userRatings.legend || 0;
         }
 
         // ==========================================
@@ -714,7 +748,7 @@
         }
 
         function recalculateRates() {
-            ['casual', 'normal', 'expert', 'master'].forEach(mode => {
+            ['casual', 'normal', 'expert', 'master', 'legend'].forEach(mode => {
                 const detail = getModeHistoryDetail(mode);
                 userRatings[mode] = detail.totalPR;
             });
@@ -762,7 +796,7 @@
         function openRateDetailModal(mode) {
             const detail = getModeHistoryDetail(mode);
             const modal = document.getElementById('rate-detail-modal');
-            const modeNames = { casual: 'カジュアル', normal: 'ノーマル', expert: 'エキスパート', master: 'マスター' };
+            const modeNames = { casual: 'カジュアル', normal: 'ノーマル', expert: 'エキスパート', master: 'マスター', legend: 'レジェンド' };
             
             document.getElementById('rd-title').innerText = `${modeNames[mode]} レート詳細`;
             document.getElementById('rd-total').innerText = detail.totalPR;
@@ -784,7 +818,7 @@
                 
                 for (let r = 1; r <= 3; r++) {
                     let neededPoints = -1;
-                    for (let p = 0; p <= 8; p++) {
+                    for (let p = 0; p <= 9; p++) {
                         if (calculatePR(r, p) > borderPR) {
                             neededPoints = p;
                             break;
@@ -815,6 +849,13 @@
 
             document.getElementById('rd-list-container').innerHTML = listHtml;
             modal.classList.remove('hidden');
+
+            // チュートリアル中のステップ進行（ステップ1だった場合のみ）
+            if (gameMode === 'tutorial' && tutorialStep === 1) {
+                tutorialStep = 2;
+                setupTutorialStep();
+                updateUI();
+            }
         }
 
         function closeRateDetailModal() {
@@ -841,6 +882,13 @@
         // ==========================================
         function openOfficialGuide() {
             document.getElementById('official-guide-modal').classList.remove('hidden');
+            
+            // チュートリアル中のステップ進行（ステップ0だった場合のみ）
+            if (gameMode === 'tutorial' && tutorialStep === 0) {
+                tutorialStep = 1;
+                setupTutorialStep();
+                updateUI(); // チュートリアルボタンの光を更新するため
+            }
         }
 
         function closeOfficialGuide() {
@@ -851,20 +899,53 @@
         // パッチノート（アップデート情報）管理機能
         // ==========================================
         const versionDetails = {
-            v111: `
+            v120: `
                 <div class="space-y-4">
                     <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-xl">
                         <span class="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-black">LATEST</span>
-                        <h4 class="text-xs font-black text-indigo-900 mt-1.5">🌟 Ver 1.1.1 アップデート内容</h4>
+                        <h4 class="text-xs font-black text-indigo-900 mt-1.5">🌟 Ver 1.2.0 アップデート内容</h4>
                     </div>
                     <ul class="space-y-2.5 text-[11px] text-slate-600 font-bold leading-relaxed list-inside list-disc">
-                        <li><span class="text-indigo-600 font-black">サポートフォームの追加</span>: バグ報告機能に加え、皆様からのご意見や感想を送れる専用フォーム（Googleフォーム）へのボタンを新設しました。IDが自動で入力されます。</li>
+                        <li><span class="text-indigo-600 font-black">新難易度「レジェンド」の実装</span>: マスターモードのCPUの思考に偏りがあり、勝ちやすいという意見を受け、マスターモードのレートが800を超えると解禁される、神々の領域「レジェンドモード」を追加しました。解禁と同時に専用ボタンとランキングが出現します。※レジェンドモードは解禁するまでボタンが出現しません。また、レジェンドモードのCPUが弱いと判断され、新しいCPUに変わる時、レジェンドモードのレートが初期値に戻ります。</li>
+                        <li><span class="text-indigo-600 font-black">AIの難易度再調整</span>: マスターモードのCPUを改善し、より強化されたCPUをレジェンドモードに実装しました。</li>
+                        <li><span class="text-indigo-600 font-black">最高レート理論値の表記修正</span>: すべてのマイベスト8枠を「1位9pt獲得時（最大 210 PR）」で揃えた際の合計値に合わせ、理論値表示を 【1680】 に修正いたしました。</li>
+                        <li><span class="text-indigo-600 font-black">過去のPR表示バグ修正</span>: 過去のバージョンでのプレイ履歴のPR（レート）が古いままで「2位なのに30点になっている」などの表示・計算バグを修正し、最新の計算式で自動再計算されるようにしました。</li>
+                        <li><span class="text-indigo-600 font-black">チュートリアルの拡張</span>: チュートリアルの最初に「レート詳細（マイベスト）の見方を確認する」ステップを追加しました。</li>
+                    </ul>
+                </div>
+            `,
+            v112: `
+                <div class="space-y-4">
+                    <div class="bg-slate-100 border border-slate-200 p-3 rounded-xl">
+                        <h4 class="text-xs font-black text-slate-700 mt-1.5">🔄 Ver 1.1.2 アップデート内容</h4>
+                    </div>
+                    <ul class="space-y-2.5 text-[11px] text-slate-600 font-bold leading-relaxed list-inside list-disc">
+                        <li><span class="text-indigo-600 font-black">ご要望・感想フォームの追加</span>: バグ報告機能に加え、皆様からのご意見や感想を送れる専用フォームへのボタンを新設しました。</li>
                         <li><span class="text-indigo-600 font-black">ID表示の分離とデザイン調整</span>: ニックネームの横に、薄いグレー色でIDを固定で付与するよう表示を改善しました。初期名はシンプルな「プレイヤー」に変更されました。</li>
+                    </ul>
+                </div>
+            `,
+            v111: `
+                <div class="space-y-4">
+                    <div class="bg-slate-100 border border-slate-200 p-3 rounded-xl">
+                        <h4 class="text-xs font-black text-slate-700 mt-1.5">🔄 Ver 1.1.1 アップデート内容</h4>
+                    </div>
+                    <ul class="space-y-2.5 text-[11px] text-slate-600 font-bold leading-relaxed list-inside list-disc">
+                        <li><span class="text-indigo-600 font-black">バグ報告フォーム連携</span>: メニュー画面上部に、プレイヤーIDが自動入力された状態で不具合報告が行えるバグ報告窓口へのリンクを新設しました。</li>
+                    </ul>
+                </div>
+            `,
+            v110: `
+                <div class="space-y-4">
+                    <div class="bg-slate-100 border border-slate-200 p-3 rounded-xl">
+                        <h4 class="text-xs font-black text-slate-700 mt-1.5">🔄 Ver 1.1.0 アップデート内容</h4>
+                    </div>
+                    <ul class="space-y-2.5 text-[11px] text-slate-600 font-bold leading-relaxed list-inside list-disc">
                         <li><span class="text-indigo-600 font-black">ランダム5桁IDの再導入</span>: クラウドデータと重複しない、完全ユニークな5桁IDの発行に変更。</li>
                         <li><span class="text-indigo-600 font-black">同じIDの重複増殖バグを完全解消</span>: クラウド上および表示上におけるプレイヤーデータの不整合を完全に修正し、常に1つに統合されるよう最適化。</li>
                         <li><span class="text-indigo-600 font-black">YOUR RANKINGの完全復旧</span>: IDのクリーニングと照合プログラムの強化により、自分の世界順位が正しくバナーに反映されるよう修正。</li>
                         <li><span class="text-indigo-600 font-black">100刻みの緻密なレート色装飾</span>: レートが100上昇するごとに背景の色が段階的に濃くなり、成長を視覚的に楽しめるようになりました。</li>
-                        <li><span class="text-indigo-600 font-black">バージョン情報（パッチノート）機能搭載</span>: ゲーム内で過去からのすべての変更履歴を直接、美しく確認できるようになりました。</li>
+                        <li><span class="text-indigo-600 font-black">バージョン情報機能搭載</span>: ゲーム内で過去からのすべての変更履歴を確認できるようになりました。</li>
                     </ul>
                 </div>
             `,
@@ -883,7 +964,7 @@
 
         function openPatchNotesModal() {
             document.getElementById('patch-notes-modal').classList.remove('hidden');
-            selectVersion('v111'); // 初期時は最新バージョンを表示
+            selectVersion('v120'); // 初期時は最新バージョンを表示
         }
 
         function closePatchNotesModal() {
@@ -891,8 +972,7 @@
         }
 
         function selectVersion(versionId) {
-            // タブのボタンの着色を更新
-            ['v111', 'v100'].forEach(v => {
+            ['v120', 'v112', 'v111', 'v110', 'v100'].forEach(v => {
                 const btn = document.getElementById(`vbtn-${v}`);
                 if (btn) {
                     if (v === versionId) {
@@ -902,7 +982,6 @@
                     }
                 }
             });
-            // 詳細コンテンツの差し替え
             document.getElementById('patch-detail-container').innerHTML = versionDetails[versionId];
         }
 
@@ -925,8 +1004,9 @@
         // 多機能ランキング処理 ＆ ★全員へのUI装飾★
         // ==========================================
         function updateRankTabUI() {
-            ['casual', 'normal', 'expert', 'master'].forEach(m => {
+            ['casual', 'normal', 'expert', 'master', 'legend'].forEach(m => {
                 const btn = document.getElementById(`rm-${m}`);
+                if (!btn) return;
                 if(m === currentRankMode) {
                     btn.classList.replace('tab-mode-inactive', 'tab-mode-active');
                     btn.classList.add('shadow-sm');
@@ -942,7 +1022,7 @@
                     btn.classList.add('shadow-sm');
                 } else {
                     btn.classList.replace('tab-period-active', 'tab-period-inactive');
-                    btn.classList.remove('shadow-sm');
+                    btn.className = "tab-btn tab-period-inactive text-xs";
                 }
             });
             const desc = document.getElementById('leaderboard-desc');
@@ -1007,8 +1087,10 @@
                     }
 
                     if (scoreForRanking > 0) {
+                        // 文字列から余分な記号を排除したクリーンな比較用IDを生成
                         const cleanId = String(player.id).replace(/^'/, '').trim();
                         
+                        // 重複行はメモリ上で自動マージし1行に集約
                         const existingPlayer = playerScores.find(p => p.id === cleanId);
                         if (!existingPlayer) {
                             playerScores.push({ id: cleanId, name: player.name, score: scoreForRanking });
@@ -1023,7 +1105,7 @@
             // レート順に降順ソート
             playerScores.sort((a, b) => b.score - a.score);
             
-            // ★ YOUR RANKING (自分の順位バナー) の描画
+            // ★ YOUR RANKING (自分の順位バナー) 判定を強化
             const cleanUserShortId = String(userShortId).replace(/^'/, '').trim();
             const myRankIdx = playerScores.findIndex(p => p.id === cleanUserShortId);
             
@@ -1034,7 +1116,7 @@
             if (cleanNickname.includes('#')) {
                 cleanNickname = cleanNickname.split('#')[0];
             }
-            document.getElementById('my-rank-name').innerHTML = `${cleanNickname} <span class="text-[10px] text-blue-200 font-normal ml-0.5">#${cleanUserShortId}</span>`;
+            document.getElementById('my-rank-name').innerHTML = `${cleanNickname} <span class="text-[10px] text-blue-200 font-normal ml-0.5">#${userShortId}</span>`;
             
             if (myRankIdx !== -1) {
                 const rankPos = myRankIdx + 1;
@@ -1052,12 +1134,10 @@
                 const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `<span class="text-slate-400 font-bold">${index + 1}</span>`;
                 const isMe = (p.id === cleanUserShortId);
                 
-                // ★ 修正：名前に入り込んだ#を完全に消去し、全員のIDを必ずp.idから取得して表示させる
-                let displayName = p.name || "不明";
-                if (displayName.includes('#')) {
-                    displayName = displayName.split('#')[0];
-                }
-                const displayIdStr = `#${p.id}`; // 全員必ずIDが表示される
+                const nameParts = p.name.split('#');
+                const displayName = nameParts[0] || "不明";
+                const displayId = nameParts.slice(1).join('#');
+                const displayIdStr = displayId ? `#${displayId}` : "";
                 
                 let bgClass = "";
                 let starHtml = "";
@@ -1099,7 +1179,7 @@
                     starHtml = `<div class="absolute -top-2 -right-1 text-[10px] text-yellow-500 drop-shadow-md tracking-tighter bg-white/90 px-1.5 rounded-full border border-yellow-200 z-20">${starStr}</div>`;
                 }
 
-                const borderClass = isMe ? "border-2 border-blue-400 shadow-md transform scale-[1.02] ring-2 ring-blue-300/30" : "border border-gray-100 shadow-sm";
+                const borderClass = isMe ? "border-2 border-blue-400 shadow-md transform scale-[1.02]" : "border border-gray-100 shadow-sm";
 
                 // IDはグレーで固定表示する
                 html += `
@@ -1233,15 +1313,16 @@
             }
 
             isMasterUnlocked = false;
+            isLegendUnlocked = false;
             userHistory = [];
-            userRatings = { casual: 0, normal: 0, expert: 0, master: 0 };
+            userRatings = { casual: 0, normal: 0, expert: 0, master: 0, legend: 0 };
             userShortId = newId;
             userNickname = "プレイヤー";
 
             localStorage.removeItem('kidoku_profile_best_2026'); 
             saveProfileData();
 
-            checkMasterLockState();
+            checkUnlocks();
             updateProfileUI();
             
             sendHistoryToGAS();
@@ -1251,30 +1332,49 @@
         }
 
         // ==========================================
-        // システム管理
+        // システム管理（解禁要素のチェック）
         // ==========================================
-        function checkMasterLockState() {
-            const btn = document.getElementById('btn-master');
-            const icon = document.getElementById('master-lock-icon');
-            const tag = document.getElementById('master-tag');
-            const desc = document.getElementById('master-desc');
+        function checkUnlocks() {
+            const btnMaster = document.getElementById('btn-master');
+            const iconMaster = document.getElementById('master-lock-icon');
+            const tagMaster = document.getElementById('master-tag');
+            const descMaster = document.getElementById('master-desc');
             
             if (isMasterUnlocked) {
-                btn.classList.remove('opacity-50');
-                icon.innerText = "4"; 
-                icon.className = "bg-purple-600 text-white text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
-                tag.innerText = "超上級者向け";
-                tag.className = "inline-block font-black tracking-widest text-[8px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full mt-1";
-                desc.innerText = "初期手札11枚。追加ルールでレーティングが激しく上下する最難関リーグ。";
-                desc.className = "text-[9px] text-gray-300 font-bold mt-1 relative z-10 leading-relaxed";
+                btnMaster.classList.remove('opacity-50');
+                iconMaster.innerText = "4"; 
+                iconMaster.className = "bg-purple-600 text-white text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
+                tagMaster.innerText = "上級者向け";
+                tagMaster.className = "inline-block font-black tracking-widest text-[8px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full mt-1";
+                descMaster.innerText = "初期手札11枚。追加ルールでレーティングが激しく上下する難関リーグ。";
+                descMaster.className = "text-[9px] text-gray-300 font-bold mt-1 relative z-10 leading-relaxed";
             } else {
-                btn.classList.add('opacity-50');
-                icon.innerText = "🔒";
-                icon.className = "bg-purple-600 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
-                tag.innerText = "エキスパート単独1位で解禁";
-                tag.className = "inline-block font-black tracking-widest text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-1";
-                desc.innerText = "???";
-                desc.className = "text-[9px] text-gray-500 font-bold mt-1 relative z-10 leading-relaxed";
+                btnMaster.classList.add('opacity-50');
+                iconMaster.innerText = "🔒";
+                iconMaster.className = "bg-purple-600 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
+                tagMaster.innerText = "エキスパート単独1位で解禁";
+                tagMaster.className = "inline-block font-black tracking-widest text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-1";
+                descMaster.innerText = "???";
+                descMaster.className = "text-[9px] text-gray-500 font-bold mt-1 relative z-10 leading-relaxed";
+            }
+
+            // ★ レジェンドモードの解禁判定（マスターのレートが800を超えているか）
+            if (userRatings.master > 800) {
+                isLegendUnlocked = true;
+            }
+            
+            const btnLegend = document.getElementById('btn-legend');
+            const tabLegend = document.getElementById('rm-legend');
+            const rateBtnLegend = document.getElementById('rate-detail-btn-legend');
+            
+            if (isLegendUnlocked) {
+                if (btnLegend) btnLegend.classList.remove('hidden');
+                if (tabLegend) tabLegend.classList.remove('hidden');
+                if (rateBtnLegend) rateBtnLegend.classList.remove('hidden');
+            } else {
+                if (btnLegend) btnLegend.classList.add('hidden');
+                if (tabLegend) tabLegend.classList.add('hidden');
+                if (rateBtnLegend) rateBtnLegend.classList.add('hidden');
             }
         }
 
@@ -1298,7 +1398,7 @@
                 isMasterUnlocked = true;
                 saveProfileData();
                 closePasswordModal();
-                checkMasterLockState();
+                checkUnlocks();
                 startGame('master');
             } else {
                 document.getElementById('password-error').classList.remove('hidden');
@@ -1309,31 +1409,8 @@
             document.getElementById('unlock-popup').classList.add('hidden');
         }
 
-        function debugWinExpert() {
-            gameMode = 'expert';
-            scores = [8, 0, 0, 0]; 
-            players = [
-                { id: 0, name: "あなた", score: 8 },
-                { id: 1, name: "CPU 1", score: 0 },
-                { id: 2, name: "CPU 2", score: 0 },
-                { id: 3, name: "CPU 3", score: 0 }
-            ];
-            
-            document.getElementById('loading-overlay').classList.add('hidden');
-            document.getElementById('mode-select-overlay').classList.add('hidden');
-            document.getElementById('password-modal').classList.add('hidden');
-            document.getElementById('reset-confirm-modal').classList.add('hidden');
-            document.getElementById('final-reset-confirm-modal').classList.add('hidden');
-            document.getElementById('modal').classList.add('hidden');
-            document.getElementById('leaderboard-modal').classList.add('hidden');
-            document.getElementById('rate-detail-modal').classList.add('hidden');
-            document.getElementById('official-guide-modal').classList.add('hidden');
-            
-            showFinalResult();
-        }
-
         // ==========================================
-        // ゲームロジック
+        // ゲームロジック ＆ ★各モードごとのAI調整★
         // ==========================================
         function startGame(mode) {
             gameMode = mode;
@@ -1346,6 +1423,7 @@
             else if (gameMode === 'normal') initialDeck = [...DECK_NORMAL];
             else if (gameMode === 'expert') initialDeck = [...DECK_EXPERT];
             else if (gameMode === 'master') initialDeck = [...DECK_MASTER];
+            else if (gameMode === 'legend') initialDeck = [...DECK_LEGEND];
             else if (gameMode === 'tutorial') initialDeck = [...DECK_TUTORIAL];
 
             players = [
@@ -1364,7 +1442,7 @@
             round = 1;
             scores = [0, 0, 0, 0];
 
-            let modeNames = { casual: 'カジュアル', normal: 'ノーマル', expert: 'エキスパート', master: 'マスター', tutorial: 'チュートリアル' };
+            let modeNames = { casual: 'カジュアル', normal: 'ノーマル', expert: 'エキスパート', master: 'マスター', legend: 'レジェンド', tutorial: 'チュートリアル' };
             addLog(`> ${modeNames[gameMode]}モードでゲームを開始します。`);
             startNewRound();
         }
@@ -1385,6 +1463,7 @@
             });
             
             if (gameMode === 'tutorial') {
+                tutorialStep = 0; // ラウンド開始時にステップ0から
                 setupTutorialStep();
             } else {
                 players.forEach((p, i) => { if(p.isCPU) plots[i] = cpuStrategy(i); });
@@ -1400,26 +1479,30 @@
             document.getElementById('tutorial-guide').classList.remove('hidden');
             
             if (tutorialStep === 0) {
+                document.getElementById('tutorial-text').innerText = "【準備1/2】まずは画面右上の「📖 公式ガイド」ボタンをタップして、ざっくりルールを確認してみましょう！（開いたらすぐに閉じてOKです）";
+            } else if (tutorialStep === 1) {
+                document.getElementById('tutorial-text').innerText = "【準備2/2】次に、プロフィールカードにある「カジュアル」などのレートボタンをタップして、レート詳細とボーダーを確認してみましょう！（開いたらすぐに閉じてOKです）";
+            } else if (tutorialStep === 2) {
                 document.getElementById('tutorial-text').innerText = "【第1試合：基本ルール】メーターを「10」ジャストにする練習です。あなたは親です。まずは数値カード「+3」を出しましょう。";
                 plots[1] = players[1].cards.indexOf(2); 
                 plots[2] = players[2].cards.indexOf(2); 
                 plots[3] = players[3].cards.indexOf(2); 
-            } else if (tutorialStep === 1) {
+            } else if (tutorialStep === 3) {
                 document.getElementById('tutorial-text').innerText = "現在メーターは「9」！ここで大きな数字を出すとオーバーして自滅します。「+1」を出して10ちょうどを狙いましょう！";
                 plots[1] = players[1].cards.indexOf(2); 
                 plots[2] = players[2].cards.indexOf(2); 
                 plots[3] = players[3].cards.indexOf(2); 
-            } else if (tutorialStep === 2) {
+            } else if (tutorialStep === 4) {
                 document.getElementById('tutorial-text').innerText = "【第2試合：応用ルール】あなたは親(👑)です。炎上を回避する必殺技を学びます。まずは「+3」を出してメーターを上げましょう。";
                 plots[1] = players[1].cards.indexOf(2); 
                 plots[2] = players[2].cards.indexOf(2); 
                 plots[3] = players[3].cards.indexOf(2); 
-            } else if (tutorialStep === 3) {
+            } else if (tutorialStep === 5) {
                 document.getElementById('tutorial-text').innerText = "メーターは「9」！次に誰かが数字を出すと誰かがスベります。親限定の必殺技「既読スルー(C)」を出して決着を無効化しましょう！";
                 plots[1] = players[1].cards.indexOf(1); 
                 plots[2] = players[2].cards.indexOf(3); 
                 plots[3] = players[3].cards.indexOf(3); 
-            } else if (tutorialStep === 4) {
+            } else if (tutorialStep === 6) {
                 meter = 19; 
                 document.getElementById('tutorial-text').innerText = "既読スルー成功！\n決着が無効化され、ゴールが「20」に延長されました！\n最後に「+1」を出して20ジャストで勝利しましょう！";
                 
@@ -1446,17 +1529,20 @@
             }, 2000);
         }
 
+        // 🌟 モードごとの難易度調整＆ガチAI「レジェンド」の追加
         function cpuStrategy(idx) {
             if (isBlockedNextTurn[idx]) return 'BLOCKED';
             const p = players[idx];
             const diff = GOAL - meter;
 
+            // ▼ カジュアルモード（最弱・適当に出す）
             if (gameMode === 'casual') {
                 const safeCards = p.cards.map((c, i) => ({c, i})).filter(o => o.c !== 'C');
                 if (Math.random() < 0.3 && p.isDealer && p.cards.includes('C')) return p.cards.indexOf('C');
                 return safeCards[Math.floor(Math.random() * safeCards.length)].i;
             }
 
+            // ▼ ノーマルモード（少しだけ考えて出す）
             if (gameMode === 'normal') {
                 if(p.canSkip && diff <= 3 && Math.random() < 0.8) return 'SKIP';
                 if(p.isDealer && p.cards.includes('C') && meter > 0 && meter >= 7 && Math.random() < 0.6) return p.cards.indexOf('C');
@@ -1467,75 +1553,164 @@
                 return 0; 
             }
 
-            const winCardIdx = p.cards.findIndex(c => typeof c === 'number' && c !== 0 && (meter + c === GOAL));
-            if (winCardIdx !== -1) return winCardIdx;
+            // ▼ エキスパート・マスターモード（旧バージョンのAI：10ジャストと特殊カードを適度に狙う手加減あり）
+            if (gameMode === 'expert' || gameMode === 'master') {
+                const winCardIdx = p.cards.findIndex(c => typeof c === 'number' && c !== 0 && (meter + c === GOAL));
+                if (winCardIdx !== -1) return winCardIdx;
 
-            if (p.isDealer && p.cards.includes('C') && meter > 0 && diff <= 3 && Math.random() < 0.9) return p.cards.indexOf('C');
+                if (p.isDealer && p.cards.includes('C') && meter > 0 && diff <= 3 && Math.random() < 0.9) return p.cards.indexOf('C');
 
-            if (diff <= 3) {
-                if (p.canSkip) return 'SKIP'; 
-                if (p.cards.includes('U') && Math.random() < 0.8) return p.cards.indexOf('U'); 
-                if (p.cards.includes(0) && Math.random() < 0.8) return p.cards.indexOf(0); 
-                if (p.cards.includes('B') && Math.random() < 0.8) return p.cards.indexOf('B'); 
-            }
-
-            if (meter >= 4 && diff >= 4) {
-                if (p.cards.includes('M') && !p.canSkip && Math.random() < 0.7) return p.cards.indexOf('M');
-                let nextP = (idx + 1) % 4;
-                if (p.cards.includes('B') && players[nextP].isDealer && Math.random() < 0.7) return p.cards.indexOf('B');
-            }
-
-            let playableCards = p.cards.map((c, i) => ({c, i})).filter(o => {
-                if (typeof o.c === 'number' && o.c !== 0) return meter + o.c < GOAL;
-                if (o.c === 0 || o.c === 'B') return true; 
-                if (o.c === 'M') return !p.canSkip; 
-                if (o.c === 'U') return meter > 3; 
-                return false; 
-            });
-
-            if (playableCards.length > 0) {
-                let numCards = playableCards.filter(o => typeof o.c === 'number' && o.c !== 0);
-                if (numCards.length > 0 && Math.random() < 0.8) {
-                    numCards.sort((a, b) => b.c - a.c); 
-                    return numCards[0].i;
+                if (diff <= 3) {
+                    if (p.canSkip) return 'SKIP'; 
+                    if (p.cards.includes('U') && Math.random() < 0.8) return p.cards.indexOf('U'); 
+                    if (p.cards.includes(0) && Math.random() < 0.8) return p.cards.indexOf(0); 
+                    if (p.cards.includes('B') && Math.random() < 0.8) return p.cards.indexOf('B'); 
                 }
-                return playableCards[Math.floor(Math.random() * playableCards.length)].i;
+
+                if (meter >= 4 && diff >= 4) {
+                    if (p.cards.includes('M') && !p.canSkip && Math.random() < 0.7) return p.cards.indexOf('M');
+                    let nextP = (idx + 1) % 4;
+                    if (p.cards.includes('B') && players[nextP].isDealer && Math.random() < 0.7) return p.cards.indexOf('B');
+                }
+
+                let playableCards = p.cards.map((c, i) => ({c, i})).filter(o => {
+                    if (typeof o.c === 'number' && o.c !== 0) return meter + o.c < GOAL;
+                    if (o.c === 0 || o.c === 'B') return true; 
+                    if (o.c === 'M') return !p.canSkip; 
+                    if (o.c === 'U') return meter > 3; 
+                    return false; 
+                });
+
+                if (playableCards.length > 0) {
+                    let numCards = playableCards.filter(o => typeof o.c === 'number' && o.c !== 0);
+                    if (numCards.length > 0 && Math.random() < 0.8) {
+                        numCards.sort((a, b) => b.c - a.c); 
+                        return numCards[0].i;
+                    }
+                    return playableCards[Math.floor(Math.random() * playableCards.length)].i;
+                }
+
+                if (p.cards.includes('C') && (!p.isDealer || meter > 0)) return p.cards.indexOf('C'); 
+                if (p.cards.includes('M')) return p.cards.indexOf('M'); 
+                if (p.cards.includes(0)) return p.cards.indexOf(0);
+                if (p.cards.includes('U')) return p.cards.indexOf('U');
+                if (p.cards.includes('B')) return p.cards.indexOf('B');
+
+                let nums = p.cards.map((c, i) => ({c, i})).filter(o => typeof o.c === 'number' && o.c !== 0).sort((a, b) => a.c - b.c);
+                if (nums.length > 0) return nums[0].i;
+
+                return 0;
             }
 
-            if (p.cards.includes('C') && (!p.isDealer || meter > 0)) return p.cards.indexOf('C'); 
-            if (p.cards.includes('M')) return p.cards.indexOf('M'); 
-            if (p.cards.includes(0)) return p.cards.indexOf(0);
-            if (p.cards.includes('U')) return p.cards.indexOf('U');
-            if (p.cards.includes('B')) return p.cards.indexOf('B');
+            // ▼ レジェンドモード（自分の手番と予想メーターを考慮するガチ思考AI）
+            if (gameMode === 'legend') {
+                const turnOrder = (idx - currentDealer + 4) % 4;
+                let expectedMeter = meter + turnOrder * 1.8; 
+                let expectedDiff = GOAL - expectedMeter;
 
-            let nums = p.cards.map((c, i) => ({c, i})).filter(o => typeof o.c === 'number' && o.c !== 0).sort((a, b) => a.c - b.c);
-            if (nums.length > 0) return nums[0].i;
+                if (p.canSkip) {
+                    let winCard = p.cards.findIndex(c => typeof c === 'number' && c !== 0 && Math.abs(expectedDiff - c) < 1.0);
+                    if (winCard !== -1 && expectedDiff > 0 && Math.random() < 0.5) {
+                        return winCard; 
+                    }
+                    return 'SKIP'; 
+                }
 
-            return 0; 
+                let candidates = [];
+
+                if (turnOrder === 0) {
+                    if (p.cards.includes('C') && diff <= 4 && diff >= 1 && Math.random() < 0.8) {
+                        return p.cards.indexOf('C');
+                    }
+                    
+                    let winCard = p.cards.findIndex(c => typeof c === 'number' && c !== 0 && (meter + c === GOAL));
+                    if (winCard !== -1) return winCard;
+
+                    p.cards.forEach((c, i) => {
+                        if (typeof c === 'number' && c !== 0) {
+                            if (meter + c < GOAL) candidates.push({ c, i, score: c }); 
+                        } else if (c === 'M' || c === 0 || c === 'B') {
+                            candidates.push({ c, i, score: 1.5 }); 
+                        }
+                    });
+                } else {
+                    if (expectedDiff <= 1) {
+                        if (p.cards.includes('U') && Math.random() < 0.8) return p.cards.indexOf('U');
+                        if (p.cards.includes(0) && Math.random() < 0.7) return p.cards.indexOf(0);
+                        if (p.cards.includes('M') && Math.random() < 0.7) return p.cards.indexOf('M');
+                        if (p.cards.includes('C') && Math.random() < 0.6) return p.cards.indexOf('C'); 
+                    }
+                    
+                    let winCard = p.cards.findIndex(c => typeof c === 'number' && c !== 0 && Math.round(expectedDiff) === c);
+                    if (winCard !== -1 && Math.random() < 0.8) return winCard;
+
+                    p.cards.forEach((c, i) => {
+                        if (typeof c === 'number' && c !== 0) {
+                            if (c < expectedDiff + 1.5) {
+                                let s = 10 - Math.abs(expectedDiff - c); 
+                                candidates.push({ c, i, score: s });
+                            }
+                        } else if (c === 'U') {
+                            candidates.push({ c, i, score: expectedDiff <= 2 ? 8 : 1 }); 
+                        } else if (c === 'M') {
+                            candidates.push({ c, i, score: 5 }); 
+                        } else if (c === 0) {
+                            candidates.push({ c, i, score: expectedDiff <= 3 ? 7 : 3 }); 
+                        } else if (c === 'B') {
+                            candidates.push({ c, i, score: 4 }); 
+                        } else if (c === 'C') {
+                            candidates.push({ c, i, score: expectedDiff <= 1 ? 6 : 1 }); 
+                        }
+                    });
+                }
+
+                if (candidates.length === 0) {
+                    let safeIdx = p.cards.findIndex(c => c === 'U' || c === 0 || c === 'M' || c === 'C' || c === 'B');
+                    if (safeIdx !== -1) return safeIdx;
+                    
+                    let nums = p.cards.map((c, i) => ({c, i})).filter(o => typeof o.c === 'number' && o.c !== 0).sort((a, b) => a.c - b.c);
+                    if (nums.length > 0) return nums[0].i;
+
+                    return 0; 
+                }
+
+                candidates.sort((a, b) => b.score - a.score);
+                let topCandidates = candidates.slice(0, 3);
+                return topCandidates[Math.floor(Math.random() * topCandidates.length)].i;
+            }
         }
 
         function selectPlayerCard(selection) {
+            if(plots[0] !== null) return; // 既に選択中の場合は二重処理を防ぐ
             if(phase !== 'PLOT') return;
 
             if (gameMode === 'tutorial') {
                 const selectedCardVal = players[0].cards[selection];
-                if (tutorialStep === 0 && selectedCardVal !== 3) {
-                    showTutorialWarning("💡 指示通り「+3」のカードを出してください。");
+                if (tutorialStep === 0) {
+                    showTutorialWarning("💡 まずは画面上部の「📖 公式ガイド」ボタンをタップしてください。");
                     return;
                 }
-                if (tutorialStep === 1 && selectedCardVal !== 1) {
-                    showTutorialWarning("💡 指示通り「+1」を出してください。");
+                if (tutorialStep === 1) {
+                    showTutorialWarning("💡 まずはプロフィールカードの「カジュアル」などのレートボタンをタップしてください。");
                     return;
                 }
                 if (tutorialStep === 2 && selectedCardVal !== 3) {
                     showTutorialWarning("💡 指示通り「+3」のカードを出してください。");
                     return;
                 }
-                if (tutorialStep === 3 && selectedCardVal !== 'C') {
+                if (tutorialStep === 3 && selectedCardVal !== 1) {
+                    showTutorialWarning("💡 指示通り「+1」を出してください。");
+                    return;
+                }
+                if (tutorialStep === 4 && selectedCardVal !== 3) {
+                    showTutorialWarning("💡 指示通り「+3」のカードを出してください。");
+                    return;
+                }
+                if (tutorialStep === 5 && selectedCardVal !== 'C') {
                     showTutorialWarning("💡 指示通り「既読スルー(C)」を出してください。");
                     return;
                 }
-                if (tutorialStep === 4 && selectedCardVal !== 1) {
+                if (tutorialStep === 6 && selectedCardVal !== 1) {
                     showTutorialWarning("💡 指示通り「+1」を出してください。");
                     return;
                 }
@@ -1636,7 +1811,7 @@
                     logMsg = `${p.name} が +${actualChange}。 (計: ${meter})`;
                 }
 
-                if ((gameMode === 'expert' || gameMode === 'master') && !isSkipping && !isBlocked) {
+                if ((gameMode === 'expert' || gameMode === 'master' || gameMode === 'legend') && !isSkipping && !isBlocked) {
                     const newCard = drawCardFromDeck();
                     p.cards.push(newCard); 
                 }
@@ -1678,7 +1853,7 @@
                     plots = [null, null, null, null]; 
 
                     if (gameMode === 'tutorial') {
-                        tutorialStep = 4; 
+                        tutorialStep = 6; 
                         setupTutorialStep();
                     } else {
                         players.forEach((p, i) => { if(p.isCPU) plots[i] = cpuStrategy(i); });
@@ -1701,11 +1876,11 @@
                 plots = [null, null, null, null];
                 
                 if (gameMode === 'tutorial') {
-                    if (tutorialStep === 0) {
-                        tutorialStep = 1; 
+                    if (tutorialStep === 2) {
+                        tutorialStep = 3; 
                         setupTutorialStep();
-                    } else if (tutorialStep === 2) {
-                        tutorialStep = 3;
+                    } else if (tutorialStep === 4) {
+                        tutorialStep = 5;
                         setupTutorialStep();
                     }
                 } else {
@@ -1727,15 +1902,15 @@
 
         function finalizeResult(res) {
             if (gameMode === 'tutorial') {
-                if (tutorialStep === 1 && res.type === 'WIN') {
-                    tutorialStep = 2; 
+                if (tutorialStep === 3 && res.type === 'WIN') {
+                    tutorialStep = 4; 
                     showModal("🎯 1試合目クリア！", "お見事！10ちょうどでGOAL達成です。<br>次の試合では親(👑)になり、応用ルールである『既読スルー（必殺技）』を使ってみましょう！", "✨", "次へ進む", () => {
                         currentDealer = 0; 
                         startNewRound();
                     });
                     return;
                 }
-                if (tutorialStep === 4 && res.type === 'WIN') {
+                if (tutorialStep === 6 && res.type === 'WIN') {
                     showModal("🎉 チュートリアル完全クリア！", "おめでとうございます！これで全基本ルールをマスターしました！\n\n【💡 既読スルー(親)の成功効果】\n① 10点到達をなかったことにする\n② 成功ボーナスとして「自分に1ポイント」入る\n③ ゴールが20に延長され、以降の勝利ポイントが「2倍(2pt)」になる\n\n他のモードを選択して実際の勝負に挑戦してみましょう！", "🏆", "モード選択に戻る", () => {
                         tutorialStep = 0;
                         document.getElementById('mode-select-overlay').classList.remove('hidden');
@@ -1800,9 +1975,12 @@
             } else if(gameMode === 'master') {
                 modeText = 'マスター';
                 badgeClass += "bg-purple-600";
+            } else if(gameMode === 'legend') {
+                modeText = 'レジェンド';
+                badgeClass += "bg-indigo-600 animate-pulse";
             } else if(gameMode === 'tutorial') {
                 modeText = 'チュートリアル';
-                badgeClass += "bg-green-600 animate-pulse";
+                badgeClass += "bg-green-600";
             }
 
             document.getElementById('phase-badge').innerText = phase === 'PLOT' ? modeText : "公開フェーズ";
@@ -1820,6 +1998,28 @@
                 document.getElementById('meter-bar').classList.replace('from-yellow-400', 'from-blue-500');
                 document.getElementById('meter-bar').classList.replace('to-red-500', 'to-indigo-600');
             }
+
+            // チュートリアル中の公式ガイドボタン誘導アニメーション
+            const officialGuideBtn = document.getElementById('official-guide-btn');
+            if (officialGuideBtn) {
+                if (gameMode === 'tutorial' && tutorialStep === 0) {
+                    officialGuideBtn.classList.add('ring-4', 'ring-green-400', 'animate-pulse');
+                } else {
+                    officialGuideBtn.classList.remove('ring-4', 'ring-green-400', 'animate-pulse');
+                }
+            }
+
+            // チュートリアル中のレート詳細ボタン誘導
+            ['casual', 'normal', 'expert', 'master'].forEach(m => {
+                const btn = document.getElementById(`rate-detail-btn-${m}`);
+                if (btn) {
+                    if (gameMode === 'tutorial' && tutorialStep === 1) {
+                        btn.classList.add('ring-4', 'ring-green-400', 'animate-pulse');
+                    } else {
+                        btn.classList.remove('ring-4', 'ring-green-400', 'animate-pulse');
+                    }
+                }
+            });
 
             const hand = document.getElementById('hand-container');
             const skipOpt = document.getElementById('skip-option');
@@ -1847,11 +2047,11 @@
 
                         let activeGlow = "";
                         if (gameMode === 'tutorial') {
-                            if (tutorialStep === 0 && c === 3) activeGlow = " ring-4 ring-green-400 scale-105";
-                            if (tutorialStep === 1 && c === 1) activeGlow = " ring-4 ring-green-400 scale-105";
                             if (tutorialStep === 2 && c === 3) activeGlow = " ring-4 ring-green-400 scale-105";
-                            if (tutorialStep === 3 && c === 'C') activeGlow = " ring-4 ring-green-400 scale-105";
-                            if (tutorialStep === 4 && c === 1) activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 3 && c === 1) activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 4 && c === 3) activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 5 && c === 'C') activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 6 && c === 1) activeGlow = " ring-4 ring-green-400 scale-105";
                         }
 
                         return `<button onclick="selectPlayerCard(${i})" class="border-2 font-black h-10 w-9 md:h-12 md:w-11 rounded-lg active:scale-90 transition-transform shadow-sm flex items-center justify-center text-center leading-tight select-none ${style}${activeGlow}">${text}</button>`;
@@ -1941,7 +2141,9 @@
 
             if (gameMode === 'expert' && isSoloExpertWin && !isMasterUnlocked) {
                 isMasterUnlocked = true;
-                checkMasterLockState();
+                checkUnlocks();
+                document.getElementById('unlock-popup-title').innerText = "限界を越えた者への招待";
+                document.getElementById('unlock-popup-desc').innerHTML = "真の混沌（カオス）が幕を開ける――。<br>最難関『マスターモード』の封印が解かれました。";
                 document.getElementById('unlock-popup').classList.remove('hidden');
             }
 
@@ -1961,6 +2163,16 @@
                 recalculateRates();
                 const newTotalRate = userRatings[gameMode];
                 const difference = newTotalRate - oldTotalRate;
+                
+                // ★ レジェンドモードの解禁チェック
+                if (gameMode === 'master' && userRatings.master > 800 && !isLegendUnlocked) {
+                    isLegendUnlocked = true;
+                    checkUnlocks();
+                    // レジェンド解禁ポップアップを表示
+                    document.getElementById('unlock-popup-title').innerText = "神々の領域へ";
+                    document.getElementById('unlock-popup-desc').innerHTML = "あなたはマスターの壁を越えました。<br>最高峰のAIが立ちはだかる『レジェンドモード』が解禁されました。";
+                    document.getElementById('unlock-popup').classList.remove('hidden');
+                }
 
                 if (difference > 0) {
                     ratingChangeMsg = `<div class="text-xs text-green-600 font-bold mt-2 text-center">🏆 記録更新！ レート <b>+${difference}</b></div>`;
