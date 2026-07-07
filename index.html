@@ -243,7 +243,7 @@
 
                 <!-- 4. マスター -->
                 <button id="btn-master" onclick="clickMasterMode()" class="w-full bg-slate-100 border-2 border-slate-300 p-3.5 rounded-2xl shadow-xl active:scale-95 transition text-left relative overflow-visible opacity-50">
-                    <div class="absolute -right-2 -top-2 text-4xl opacity-10">🔒</div>
+                    <div id="master-bg-icon" class="absolute -right-2 -top-2 text-4xl opacity-10">🔒</div>
                     <div class="flex items-start gap-3 mb-1 relative z-10">
                         <span id="master-lock-icon" class="bg-slate-400 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">🔒</span>
                         <div>
@@ -521,6 +521,10 @@
                         真の混沌（カオス）が幕を開ける――。<br>
                         最難関『マスターモード』の封印が解かれました。
                     </p>
+                    <div class="bg-black/60 py-3 px-4 rounded-xl border border-purple-700 mb-6 shadow-inner">
+                        <span class="text-[10px] text-purple-300 font-bold block mb-1">他端末用 解禁パスワード</span>
+                        <span class="text-lg font-black tracking-widest text-white drop-shadow-md">KIDOKU_M_2026</span>
+                    </div>
                     <button onclick="closeUnlockPopup()" class="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white font-black py-4 rounded-xl active:scale-95 transition-all text-sm shadow-lg shadow-purple-500/50 border border-purple-300">
                         確認して結果へ進む
                     </button>
@@ -552,6 +556,8 @@
         let currentDealer = 0;
         let poolPoints = 1;
         let isBlockedNextTurn = [false, false, false, false];
+
+        let postTutorialState = 0; // チュートリアル終了後の誘導状態管理用
 
         // --- セーブデータ関連 ---
         let userShortId = ""; // 重複のないランダム5桁ID
@@ -848,11 +854,10 @@
             document.getElementById('rd-list-container').innerHTML = listHtml;
             modal.classList.remove('hidden');
 
-            // チュートリアル中のステップ進行（ステップ1だった場合のみ）
-            if (gameMode === 'tutorial' && tutorialStep === 1) {
-                tutorialStep = 2;
-                setupTutorialStep();
-                updateUI();
+            // チュートリアル終了後のステップ進行
+            if (postTutorialState === 2) {
+                postTutorialState = 3;
+                setupPostTutorialStep();
             }
         }
 
@@ -881,11 +886,10 @@
         function openOfficialGuide() {
             document.getElementById('official-guide-modal').classList.remove('hidden');
             
-            // チュートリアル中のステップ進行（ステップ0だった場合のみ）
-            if (gameMode === 'tutorial' && tutorialStep === 0) {
-                tutorialStep = 1;
-                setupTutorialStep();
-                updateUI(); // チュートリアルボタンの光を更新するため
+            // チュートリアル終了後のステップ進行
+            if (postTutorialState === 1) {
+                postTutorialState = 2;
+                setupPostTutorialStep();
             }
         }
 
@@ -1336,6 +1340,7 @@
             const btnMaster = document.getElementById('btn-master');
             const titleMaster = document.getElementById('master-title');
             const iconMaster = document.getElementById('master-lock-icon');
+            const bgIconMaster = document.getElementById('master-bg-icon');
             const tagMaster = document.getElementById('master-tag');
             const descMaster = document.getElementById('master-desc');
             
@@ -1346,6 +1351,7 @@
                     titleMaster.classList.remove('text-slate-500');
                     titleMaster.classList.add('text-purple-400');
                 }
+                if (bgIconMaster) bgIconMaster.classList.add('hidden');
                 iconMaster.innerText = "4"; 
                 iconMaster.className = "bg-purple-600 text-white text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
                 tagMaster.innerText = "超上級者向け";
@@ -1359,6 +1365,7 @@
                     titleMaster.classList.add('text-slate-500');
                     titleMaster.classList.remove('text-purple-400');
                 }
+                if (bgIconMaster) bgIconMaster.classList.remove('hidden');
                 iconMaster.innerText = "🔒";
                 iconMaster.className = "bg-slate-400 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
                 tagMaster.innerText = "エキスパート単独1位で解禁";
@@ -1412,10 +1419,6 @@
             } else {
                 document.getElementById('password-error').classList.remove('hidden');
             }
-        }
-
-        function closeUnlockPopup() {
-            document.getElementById('unlock-popup').classList.add('hidden');
         }
 
         // ==========================================
@@ -1472,7 +1475,6 @@
             });
             
             if (gameMode === 'tutorial') {
-                tutorialStep = 0; // ラウンド開始時にステップ0から
                 setupTutorialStep();
             } else {
                 players.forEach((p, i) => { if(p.isCPU) plots[i] = cpuStrategy(i); });
@@ -1485,33 +1487,31 @@
         }
 
         function setupTutorialStep() {
-            document.getElementById('tutorial-guide').classList.remove('hidden');
+            const guide = document.getElementById('tutorial-guide');
+            guide.classList.remove('hidden');
+            guide.style.zIndex = "10";
             
             if (tutorialStep === 0) {
-                document.getElementById('tutorial-text').innerText = "【準備1/2】まずは画面右上の「📖 公式ガイド」ボタンをタップして、ざっくりルールを確認してみましょう！（開いたらすぐに閉じてOKです）";
-            } else if (tutorialStep === 1) {
-                document.getElementById('tutorial-text').innerText = "【準備2/2】次に、プロフィールカードにある「カジュアル」などのレートボタンをタップして、レート詳細とボーダーを確認してみましょう！（開いたらすぐに閉じてOKです）";
-            } else if (tutorialStep === 2) {
                 document.getElementById('tutorial-text').innerText = "【第1試合：基本ルール】メーターを「10」ジャストにする練習です。あなたは親です。まずは数値カード「+3」を出しましょう。";
                 plots[1] = players[1].cards.indexOf(2); 
                 plots[2] = players[2].cards.indexOf(2); 
                 plots[3] = players[3].cards.indexOf(2); 
-            } else if (tutorialStep === 3) {
+            } else if (tutorialStep === 1) {
                 document.getElementById('tutorial-text').innerText = "現在メーターは「9」！ここで大きな数字を出すとオーバーして自滅します。「+1」を出して10ちょうどを狙いましょう！";
                 plots[1] = players[1].cards.indexOf(2); 
                 plots[2] = players[2].cards.indexOf(2); 
                 plots[3] = players[3].cards.indexOf(2); 
-            } else if (tutorialStep === 4) {
+            } else if (tutorialStep === 2) {
                 document.getElementById('tutorial-text').innerText = "【第2試合：応用ルール】あなたは親(👑)です。炎上を回避する必殺技を学びます。まずは「+3」を出してメーターを上げましょう。";
                 plots[1] = players[1].cards.indexOf(2); 
                 plots[2] = players[2].cards.indexOf(2); 
                 plots[3] = players[3].cards.indexOf(2); 
-            } else if (tutorialStep === 5) {
+            } else if (tutorialStep === 3) {
                 document.getElementById('tutorial-text').innerText = "メーターは「9」！次に誰かが数字を出すと誰かがスベります。親限定の必殺技「既読スルー(C)」を出して決着を無効化しましょう！";
                 plots[1] = players[1].cards.indexOf(1); 
                 plots[2] = players[2].cards.indexOf(3); 
                 plots[3] = players[3].cards.indexOf(3); 
-            } else if (tutorialStep === 6) {
+            } else if (tutorialStep === 4) {
                 meter = 19; 
                 document.getElementById('tutorial-text').innerText = "既読スルー成功！\n決着が無効化され、ゴールが「20」に延長されました！\n最後に「+1」を出して20ジャストで勝利しましょう！";
                 
@@ -1521,6 +1521,40 @@
                 plots[1] = 0; 
                 plots[2] = 0; 
                 plots[3] = 0; 
+            }
+        }
+
+        // チュートリアル終了後（ホーム画面）のガイド管理
+        function setupPostTutorialStep() {
+            const guide = document.getElementById('tutorial-guide');
+            guide.classList.remove('hidden');
+            guide.style.zIndex = "100"; // モード選択画面より手前に出す
+
+            if (postTutorialState === 1) {
+                document.getElementById('tutorial-text').innerText = "【チュートリアル完了 1/2】\n画面上部の「📖 公式ガイド」ボタンをタップして、ルールの見方を確認してみましょう！（開いたらすぐに閉じてOKです）";
+                const btn = document.getElementById('official-guide-btn');
+                if(btn) btn.classList.add('ring-4', 'ring-green-400', 'animate-pulse');
+            } else if (postTutorialState === 2) {
+                const oBtn = document.getElementById('official-guide-btn');
+                if(oBtn) oBtn.classList.remove('ring-4', 'ring-green-400', 'animate-pulse');
+                
+                document.getElementById('tutorial-text').innerText = "【チュートリアル完了 2/2】\n最後に、プロフィールカードにある「カジュアル」などのレートボタンをタップして、レート詳細とボーダーを確認してみましょう！（開いたらすぐに閉じてOKです）";
+                
+                ['casual', 'normal', 'expert', 'master'].forEach(m => {
+                    const btn = document.getElementById(`rate-detail-btn-${m}`);
+                    if (btn) btn.classList.add('ring-4', 'ring-green-400', 'animate-pulse');
+                });
+            } else if (postTutorialState === 3) {
+                ['casual', 'normal', 'expert', 'master'].forEach(m => {
+                    const btn = document.getElementById(`rate-detail-btn-${m}`);
+                    if (btn) btn.classList.remove('ring-4', 'ring-green-400', 'animate-pulse');
+                });
+                document.getElementById('tutorial-text').innerText = "【チュートリアル全行程クリア！】\nお疲れ様でした！好きなモードを選んでゲームを始めてください！";
+                setTimeout(() => {
+                    guide.classList.add('hidden');
+                    guide.style.zIndex = "10"; 
+                    postTutorialState = 0;
+                }, 3000);
             }
         }
 
@@ -1695,31 +1729,23 @@
 
             if (gameMode === 'tutorial') {
                 const selectedCardVal = players[0].cards[selection];
-                if (tutorialStep === 0) {
-                    showTutorialWarning("💡 まずは画面上部の「📖 公式ガイド」ボタンをタップしてください。");
+                if (tutorialStep === 0 && selectedCardVal !== 3) {
+                    showTutorialWarning("💡 指示通り「+3」のカードを出してください。");
                     return;
                 }
-                if (tutorialStep === 1) {
-                    showTutorialWarning("💡 まずはプロフィールカードの「カジュアル」などのレートボタンをタップしてください。");
+                if (tutorialStep === 1 && selectedCardVal !== 1) {
+                    showTutorialWarning("💡 指示通り「+1」を出してください。");
                     return;
                 }
                 if (tutorialStep === 2 && selectedCardVal !== 3) {
                     showTutorialWarning("💡 指示通り「+3」のカードを出してください。");
                     return;
                 }
-                if (tutorialStep === 3 && selectedCardVal !== 1) {
-                    showTutorialWarning("💡 指示通り「+1」を出してください。");
-                    return;
-                }
-                if (tutorialStep === 4 && selectedCardVal !== 3) {
-                    showTutorialWarning("💡 指示通り「+3」のカードを出してください。");
-                    return;
-                }
-                if (tutorialStep === 5 && selectedCardVal !== 'C') {
+                if (tutorialStep === 3 && selectedCardVal !== 'C') {
                     showTutorialWarning("💡 指示通り「既読スルー(C)」を出してください。");
                     return;
                 }
-                if (tutorialStep === 6 && selectedCardVal !== 1) {
+                if (tutorialStep === 4 && selectedCardVal !== 1) {
                     showTutorialWarning("💡 指示通り「+1」を出してください。");
                     return;
                 }
@@ -1862,7 +1888,7 @@
                     plots = [null, null, null, null]; 
 
                     if (gameMode === 'tutorial') {
-                        tutorialStep = 6; 
+                        tutorialStep = 4; 
                         setupTutorialStep();
                     } else {
                         players.forEach((p, i) => { if(p.isCPU) plots[i] = cpuStrategy(i); });
@@ -1885,11 +1911,11 @@
                 plots = [null, null, null, null];
                 
                 if (gameMode === 'tutorial') {
-                    if (tutorialStep === 2) {
-                        tutorialStep = 3; 
+                    if (tutorialStep === 0) {
+                        tutorialStep = 1; 
                         setupTutorialStep();
-                    } else if (tutorialStep === 4) {
-                        tutorialStep = 5;
+                    } else if (tutorialStep === 2) {
+                        tutorialStep = 3;
                         setupTutorialStep();
                     }
                 } else {
@@ -1911,20 +1937,21 @@
 
         function finalizeResult(res) {
             if (gameMode === 'tutorial') {
-                if (tutorialStep === 3 && res.type === 'WIN') {
-                    tutorialStep = 4; 
+                if (tutorialStep === 1 && res.type === 'WIN') {
+                    tutorialStep = 2; 
                     showModal("🎯 1試合目クリア！", "お見事！10ちょうどでGOAL達成です。<br>次の試合では親(👑)になり、応用ルールである『既読スルー（必殺技）』を使ってみましょう！", "✨", "次へ進む", () => {
                         currentDealer = 0; 
                         startNewRound();
                     });
                     return;
                 }
-                if (tutorialStep === 6 && res.type === 'WIN') {
-                    showModal("🎉 チュートリアル完全クリア！", "おめでとうございます！これで全基本ルールをマスターしました！\n\n【💡 既読スルー(親)の成功効果】\n① 10点到達をなかったことにする\n② 成功ボーナスとして「自分に1ポイント」入る\n③ ゴールが20に延長され、以降の勝利ポイントが「2倍(2pt)」になる\n\n他のモードを選択して実際の勝負に挑戦してみましょう！", "🏆", "モード選択に戻る", () => {
-                        tutorialStep = 0;
+                if (tutorialStep === 4 && res.type === 'WIN') {
+                    showModal("🎉 チュートリアル試合クリア！", "おめでとうございます！これで基本ルールをマスターしました！\n\n【💡 既読スルー(親)の成功効果】\n① 10点到達をなかったことにする\n② 成功ボーナスとして「自分に1ポイント」入る\n③ ゴールが20に延長され、以降の勝利ポイントが「2倍(2pt)」になる\n\nホーム画面に戻って、重要な機能を確認しましょう！", "🏆", "ホーム画面へ戻る", () => {
+                        tutorialStep = -1;
+                        postTutorialState = 1;
                         document.getElementById('mode-select-overlay').classList.remove('hidden');
                         document.getElementById('plot-area').classList.add('opacity-50', 'pointer-events-none');
-                        document.getElementById('tutorial-guide').classList.add('hidden');
+                        setupPostTutorialStep();
                     });
                     return;
                 }
@@ -2008,28 +2035,6 @@
                 document.getElementById('meter-bar').classList.replace('to-red-500', 'to-indigo-600');
             }
 
-            // チュートリアル中の公式ガイドボタン誘導アニメーション
-            const officialGuideBtn = document.getElementById('official-guide-btn');
-            if (officialGuideBtn) {
-                if (gameMode === 'tutorial' && tutorialStep === 0) {
-                    officialGuideBtn.classList.add('ring-4', 'ring-green-400', 'animate-pulse');
-                } else {
-                    officialGuideBtn.classList.remove('ring-4', 'ring-green-400', 'animate-pulse');
-                }
-            }
-
-            // チュートリアル中のレート詳細ボタン誘導
-            ['casual', 'normal', 'expert', 'master'].forEach(m => {
-                const btn = document.getElementById(`rate-detail-btn-${m}`);
-                if (btn) {
-                    if (gameMode === 'tutorial' && tutorialStep === 1) {
-                        btn.classList.add('ring-4', 'ring-green-400', 'animate-pulse');
-                    } else {
-                        btn.classList.remove('ring-4', 'ring-green-400', 'animate-pulse');
-                    }
-                }
-            });
-
             const hand = document.getElementById('hand-container');
             const skipOpt = document.getElementById('skip-option');
             
@@ -2056,11 +2061,11 @@
 
                         let activeGlow = "";
                         if (gameMode === 'tutorial') {
+                            if (tutorialStep === 0 && c === 3) activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 1 && c === 1) activeGlow = " ring-4 ring-green-400 scale-105";
                             if (tutorialStep === 2 && c === 3) activeGlow = " ring-4 ring-green-400 scale-105";
-                            if (tutorialStep === 3 && c === 1) activeGlow = " ring-4 ring-green-400 scale-105";
-                            if (tutorialStep === 4 && c === 3) activeGlow = " ring-4 ring-green-400 scale-105";
-                            if (tutorialStep === 5 && c === 'C') activeGlow = " ring-4 ring-green-400 scale-105";
-                            if (tutorialStep === 6 && c === 1) activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 3 && c === 'C') activeGlow = " ring-4 ring-green-400 scale-105";
+                            if (tutorialStep === 4 && c === 1) activeGlow = " ring-4 ring-green-400 scale-105";
                         }
 
                         return `<button onclick="selectPlayerCard(${i})" class="border-2 font-black h-10 w-9 md:h-12 md:w-11 rounded-lg active:scale-90 transition-transform shadow-sm flex items-center justify-center text-center leading-tight select-none ${style}${activeGlow}">${text}</button>`;
