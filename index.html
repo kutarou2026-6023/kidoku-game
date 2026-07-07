@@ -1007,10 +1007,8 @@
                     }
 
                     if (scoreForRanking > 0) {
-                        // 文字列から余分な記号を排除したクリーンな比較用IDを生成
                         const cleanId = String(player.id).replace(/^'/, '').trim();
                         
-                        // 重複行はメモリ上で自動マージし1行に集約
                         const existingPlayer = playerScores.find(p => p.id === cleanId);
                         if (!existingPlayer) {
                             playerScores.push({ id: cleanId, name: player.name, score: scoreForRanking });
@@ -1025,12 +1023,18 @@
             // レート順に降順ソート
             playerScores.sort((a, b) => b.score - a.score);
             
-            // ★ YOUR RANKING (自分の順位バナー) 判定を強化
+            // ★ YOUR RANKING (自分の順位バナー) の描画
             const cleanUserShortId = String(userShortId).replace(/^'/, '').trim();
             const myRankIdx = playerScores.findIndex(p => p.id === cleanUserShortId);
             
             const myRankBanner = document.getElementById('my-rank-banner');
-            document.getElementById('my-rank-name').innerHTML = `${userNickname} <span class="text-[10px] text-blue-200 font-normal ml-0.5">#${userShortId}</span>`;
+            
+            // 古いデータで名前に#が残っていた場合の対策
+            let cleanNickname = userNickname;
+            if (cleanNickname.includes('#')) {
+                cleanNickname = cleanNickname.split('#')[0];
+            }
+            document.getElementById('my-rank-name').innerHTML = `${cleanNickname} <span class="text-[10px] text-blue-200 font-normal ml-0.5">#${cleanUserShortId}</span>`;
             
             if (myRankIdx !== -1) {
                 const rankPos = myRankIdx + 1;
@@ -1048,10 +1052,12 @@
                 const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `<span class="text-slate-400 font-bold">${index + 1}</span>`;
                 const isMe = (p.id === cleanUserShortId);
                 
-                const nameParts = p.name.split('#');
-                const displayName = nameParts[0] || "不明";
-                const displayId = nameParts.slice(1).join('#');
-                const displayIdStr = displayId ? `#${displayId}` : "";
+                // ★ 修正：名前に入り込んだ#を完全に消去し、全員のIDを必ずp.idから取得して表示させる
+                let displayName = p.name || "不明";
+                if (displayName.includes('#')) {
+                    displayName = displayName.split('#')[0];
+                }
+                const displayIdStr = `#${p.id}`; // 全員必ずIDが表示される
                 
                 let bgClass = "";
                 let starHtml = "";
@@ -1093,14 +1099,15 @@
                     starHtml = `<div class="absolute -top-2 -right-1 text-[10px] text-yellow-500 drop-shadow-md tracking-tighter bg-white/90 px-1.5 rounded-full border border-yellow-200 z-20">${starStr}</div>`;
                 }
 
-                const borderClass = isMe ? "border-2 border-blue-400 shadow-md transform scale-[1.02]" : "border border-gray-100 shadow-sm";
+                const borderClass = isMe ? "border-2 border-blue-400 shadow-md transform scale-[1.02] ring-2 ring-blue-300/30" : "border border-gray-100 shadow-sm";
 
+                // IDはグレーで固定表示する
                 html += `
                     <div class="flex justify-between items-center p-3 rounded-xl transition-all relative mb-2 mt-1 ${bgClass} ${borderClass}">
                         ${starHtml}
                         <div class="flex items-center gap-3 overflow-hidden mr-2 relative z-10">
                             <span class="w-6 text-center text-sm font-black flex-shrink-0">${medal}</span>
-                            <span class="text-xs font-black truncate text-slate-800" title="${p.name}">
+                            <span class="text-xs font-black truncate text-slate-800" title="${displayName}">
                                 ${displayName}<span class="text-gray-400 font-normal ml-1">${displayIdStr}</span>
                                 ${isMe ? '<span class="text-[8px] bg-blue-600 text-white px-1.5 py-0.5 rounded-full ml-1 flex-shrink-0 font-black shadow-sm">YOU</span>' : ''}
                             </span>
