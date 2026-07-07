@@ -231,7 +231,6 @@
 
                 <!-- 3. エキスパート -->
                 <button onclick="startGame('expert')" class="w-full bg-red-50 border-2 border-red-500 p-3.5 rounded-2xl shadow-xl active:scale-95 transition text-left relative overflow-visible">
-                    <div class="absolute -right-4 -top-4 text-4xl opacity-10">🃏</div>
                     <div class="flex items-start gap-3 mb-1 relative z-10">
                         <span class="bg-red-100 text-red-600 text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">3</span>
                         <div>
@@ -248,7 +247,7 @@
                     <div class="flex items-start gap-3 mb-1 relative z-10">
                         <span id="master-lock-icon" class="bg-slate-400 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">🔒</span>
                         <div>
-                            <h3 class="text-sm font-black text-slate-500 leading-tight flex items-center gap-1.5">
+                            <h3 id="master-title" class="text-sm font-black text-slate-500 leading-tight flex items-center gap-1.5">
                                 マスターモード 
                             </h3>
                             <span id="master-tag" class="inline-block font-black tracking-widest text-[8px] bg-slate-400 text-white px-1.5 py-0.5 rounded-full mt-1">エキスパート単独1位で解禁</span>
@@ -259,7 +258,6 @@
 
                 <!-- 5. レジェンド（解禁されるまで非表示） -->
                 <button id="btn-legend" onclick="startGame('legend')" class="w-full bg-gradient-to-r from-slate-900 to-indigo-900 border-2 border-indigo-500 p-3.5 rounded-2xl shadow-xl active:scale-95 transition text-left relative overflow-visible hidden">
-                    <div class="absolute -right-4 -top-4 text-4xl opacity-20">🌌</div>
                     <div class="flex items-start gap-3 mb-1 relative z-10">
                         <span class="bg-indigo-600 text-white text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0">5</span>
                         <div>
@@ -1336,24 +1334,35 @@
         // ==========================================
         function checkUnlocks() {
             const btnMaster = document.getElementById('btn-master');
+            const titleMaster = document.getElementById('master-title');
             const iconMaster = document.getElementById('master-lock-icon');
             const tagMaster = document.getElementById('master-tag');
             const descMaster = document.getElementById('master-desc');
             
             if (isMasterUnlocked) {
-                btnMaster.classList.remove('opacity-50');
+                btnMaster.classList.remove('opacity-50', 'bg-slate-100', 'border-slate-300');
+                btnMaster.classList.add('bg-slate-900', 'border-purple-500');
+                if (titleMaster) {
+                    titleMaster.classList.remove('text-slate-500');
+                    titleMaster.classList.add('text-purple-400');
+                }
                 iconMaster.innerText = "4"; 
                 iconMaster.className = "bg-purple-600 text-white text-lg w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
-                tagMaster.innerText = "上級者向け";
+                tagMaster.innerText = "超上級者向け";
                 tagMaster.className = "inline-block font-black tracking-widest text-[8px] bg-purple-600 text-white px-1.5 py-0.5 rounded-full mt-1";
-                descMaster.innerText = "初期手札11枚。追加ルールでレーティングが激しく上下する難関リーグ。";
+                descMaster.innerText = "初期手札11枚。追加ルールでレーティングが激しく上下する最難関リーグ。";
                 descMaster.className = "text-[9px] text-gray-300 font-bold mt-1 relative z-10 leading-relaxed";
             } else {
-                btnMaster.classList.add('opacity-50');
+                btnMaster.classList.add('opacity-50', 'bg-slate-100', 'border-slate-300');
+                btnMaster.classList.remove('bg-slate-900', 'border-purple-500');
+                if (titleMaster) {
+                    titleMaster.classList.add('text-slate-500');
+                    titleMaster.classList.remove('text-purple-400');
+                }
                 iconMaster.innerText = "🔒";
-                iconMaster.className = "bg-purple-600 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
+                iconMaster.className = "bg-slate-400 text-white text-xs w-8 h-8 flex items-center justify-center rounded-full font-black shrink-0";
                 tagMaster.innerText = "エキスパート単独1位で解禁";
-                tagMaster.className = "inline-block font-black tracking-widest text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded-full mt-1";
+                tagMaster.className = "inline-block font-black tracking-widest text-[8px] bg-slate-400 text-white px-1.5 py-0.5 rounded-full mt-1";
                 descMaster.innerText = "???";
                 descMaster.className = "text-[9px] text-gray-500 font-bold mt-1 relative z-10 leading-relaxed";
             }
