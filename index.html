@@ -360,12 +360,12 @@
                 <!-- バージョン切り替え用タブ -->
                 <div class="flex gap-2 mb-4 bg-slate-50 p-1.5 rounded-xl border border-slate-200 overflow-x-auto">
                     <button onclick="selectVersion('v131')" id="vbtn-v131" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all bg-slate-900 text-white shadow-sm">Ver 1.3.1<br><span class="text-[8px] font-normal text-slate-300">2026/07/08</span></button>
-                    <button onclick="selectVersion('v130')" id="vbtn-v130" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.3.0<br><span class="text-[8px] font-normal text-slate-300">2026/07/08</span></button>
-                    <button onclick="selectVersion('v120')" id="vbtn-v120" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.2.0<br><span class="text-[8px] font-normal text-slate-300">2026/07/07</span></button>
-                    <button onclick="selectVersion('v112')" id="vbtn-v112" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.1.2<br><span class="text-[8px] font-normal text-slate-300">2026/07/01</span></button>
-                    <button onclick="selectVersion('v111')" id="vbtn-v111" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.1.1<br><span class="text-[8px] font-normal text-slate-300">2026/06/30</span></button>
-                    <button onclick="selectVersion('v110')" id="vbtn-v110" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.1.0<br><span class="text-[8px] font-normal text-slate-300">2026/06/30</span></button>
-                    <button onclick="selectVersion('v100')" id="vbtn-v100" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.0.0<br><span class="text-[8px] font-normal text-slate-300">2026/06/26</span></button>
+                    <button onclick="selectVersion('v130')" id="vbtn-v130" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.3.0</button>
+                    <button onclick="selectVersion('v120')" id="vbtn-v120" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.2.0</button>
+                    <button onclick="selectVersion('v112')" id="vbtn-v112" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.1.2</button>
+                    <button onclick="selectVersion('v111')" id="vbtn-v111" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.1.1</button>
+                    <button onclick="selectVersion('v110')" id="vbtn-v110" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.1.0</button>
+                    <button onclick="selectVersion('v100')" id="vbtn-v100" class="flex-shrink-0 px-4 py-2 rounded-lg font-black text-xs transition-all text-slate-500 hover:bg-slate-100">Ver 1.0.0</button>
                 </div>
 
                 <!-- 詳細テキストスクロールエリア -->
@@ -690,10 +690,17 @@
                 setTimeout(() => {
                     loading.classList.add('hidden');
                     document.getElementById('mode-select-overlay').classList.remove('hidden');
+                    
+                    // === 👇 ここに追加しています 👇 ===
+                    // ローディング画面が非表示になり、モード選択画面が表示された直後に
+                    // 初回ポップアップの判定と表示を行います。
+                    checkIntroPopup();
+                    // ===================================
+                    
                 }, 300); 
             }, 100); 
         }
-
+        
         // 重複なしのランダム5桁ID生成
         function generateUniqueId(playersData) {
             let newId = "";
@@ -1110,19 +1117,29 @@
         // パッチノート
         // ==========================================
         const versionDetails = {
+            v132: `
+                <div class="space-y-4">
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl">
+                    <span class="text-[10px] bg-amber-600 text-white px-2 py-0.5 rounded-full font-black">LATEST</span>
+                    <h4 class="text-xs font-black text-amber-900 mt-1.5">🌟 Ver 1.3.2 アップデート内容</h4>
+                </div>
+                <ul class="space-y-2.5 text-[11px] text-slate-600 font-bold leading-relaxed list-inside list-disc">
+                    <li><span class="text-amber-600 font-black">初回起動時のポップアップを追加</span>: 始めてゲームを遊んだ人でもスムーズに進められるように、案内のポップアップを追加しました。2回目以降は表示されません。</li>
+                </ul>
+            </div>
+            `,
             v131: `
                 <div class="space-y-4">
-                    <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl">
-                        <span class="text-[10px] bg-amber-600 text-white px-2 py-0.5 rounded-full font-black">LATEST</span>
-                        <h4 class="text-xs font-black text-amber-900 mt-1.5">🌟 Ver 1.3.1 アップデート内容</h4>
-                    </div>
-                    <ul class="space-y-2.5 text-[11px] text-slate-600 font-bold leading-relaxed list-inside list-disc">
-                        <li><span class="text-amber-600 font-black">不具合の修正</span>: エキスパートで単独1位を取り、マスターモードがアンロックされたときの画面でボタンを押しても先に進めない不具合を修正しました。</li>
-                        <li><span class="text-amber-600 font-black">レジェンドのCPUを変更</span>:マスターとの違いが無いという意見が多かったため、レジェンドを制作者がCPUを色々試す実験場とすることにしました。1.3.1では完全ランダムになっています。</li>
-                        <li><span class="text-amber-600 font-black">ログインシステムの見直し</span>: ログイン機能が正常に動作しないという報告が多く、製作者自身もそのバグに遭遇しているため、早急に対応中。改善されていない可能性があります。</li>
-                        <li><span class="text-amber-600 font-black">公式X(旧Twitter)が開くボタンを追加</span>: 公式Xへと飛ぶボタンが追加されました。</li>
-                    </ul>
+                <div class="bg-slate-100 border border-slate-200 p-3 rounded-xl">
+                    <h4 class="text-xs font-black text-slate-700 mt-1.5">🔄 Ver 1.3.1 アップデート内容</h4>
                 </div>
+                <ul class="space-y-2.5 text-[11px] text-slate-600 font-bold leading-relaxed list-inside list-disc">
+                    <li><span class="text-indigo-600 font-black">不具合の修正</span>: エキスパートで単独1位を取り、マスターモードがアンロックされたときの画面でボタンを押しても先に進めない不具合を修正しました。</li>
+                    <li><span class="text-indigo-600 font-black">レジェンドのCPUを変更</span>: マスターとの違いが無いという意見が多かったため、レジェンドを制作者がCPUを色々試す実験場とすることにしました。1.3.1では完全ランダムになっています。</li>
+                    <li><span class="text-indigo-600 font-black">ログインシステムの見直し</span>: ログイン機能が正常に動作しないという報告が多く、製作者自身もそのバグに遭遇しているため、早急に対応中。改善されていない可能性があります。</li>
+                    <li><span class="text-indigo-600 font-black">公式X(旧Twitter)が開くボタンを追加</span>: 公式Xへと飛ぶボタンが追加されました。</li>
+                </ul>
+            </div>
             `,
             v130: `
                 <div class="space-y-4">
@@ -1135,10 +1152,11 @@
                     </ul>
                 </div>
             `,
-v120: `
+            v120: `
                 <div class="space-y-4">
-                    <div class="bg-slate-100 border border-slate-200 p-3 rounded-xl">
-                       <h4 class="text-xs font-black text-slate-700 mt-1.5">🔄 Ver 1.2.0 アップデート内容</h4>
+                    <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-xl">
+                        <span class="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-black">LATEST</span>
+                        <h4 class="text-xs font-black text-indigo-900 mt-1.5">🔄 Ver 1.2.0 アップデート内容</h4>
                     </div>
                     <ul class="space-y-2.5 text-[11px] text-slate-600 font-bold leading-relaxed list-inside list-disc">
                         <li><span class="text-indigo-600 font-black">新難易度「レジェンド」の実装</span>: マスターモードのCPUの思考に偏りがあり、勝ちやすいという意見を受け、マスターモードのレートが800を超えると解禁される、神々の領域「レジェンドモード」を追加しました。解禁と同時に専用ボタンとランキングが出現します。※レジェンドモードは解禁するまでボタンが出現しません。また、レジェンドモードのCPUが弱いと判断され、新しいCPUに変わる時、レジェンドモードのレートが初期値に戻ります。</li>
@@ -2395,6 +2413,104 @@ v120: `
             // 🌟 常に一番下までスクロールさせる処理
             log.scrollTop = log.scrollHeight;
         }
+    // ==========================================
+    // 初回起動ポップアップ管理関数
+    // ==========================================
+    
+    // 1. 初回かどうかをチェックして表示する関数
+    function checkIntroPopup() {
+        // 移植先ゲーム用にキー名を変更することをおすすめします (例: 'GameTitle_hasSeenIntro')
+        const storageKey = 'hasSeenIntro_NewGame'; 
+        const hasSeen = localStorage.getItem(storageKey);
+    
+        if (!hasSeen) {
+            const popup = document.getElementById('intro-popup');
+            if(popup) popup.classList.remove('hidden');
+
+            // 【追加】ポップアップ表示中は、背面のスクロールと操作を完全に無効化する
+                const modeSelect = document.getElementById('mode-select-overlay');
+                if (modeSelect) {
+                    modeSelect.classList.remove('overflow-y-auto');
+                    modeSelect.classList.add('overflow-hidden', 'pointer-events-none');
+                }   
+        }
+    }
+    
+    // 2. ポップアップを閉じて「見た」記録を残す関数
+    function closeIntroPopup() {
+        const popup = document.getElementById('intro-popup');
+        const storageKey = 'hasSeenIntro_NewGame'; 
+        
+        // 閲覧フラグを保存
+        localStorage.setItem(storageKey, 'true'); 
+
+        // 【追加】ポップアップを閉じる際、背面のスクロールと操作を有効に戻す
+            const modeSelect = document.getElementById('mode-select-overlay');
+            if (modeSelect) {
+                modeSelect.classList.add('overflow-y-auto');
+                modeSelect.classList.remove('overflow-hidden', 'pointer-events-none');
+            }   
+        
+        // フェードアウト効果
+        popup.classList.add('opacity-0');
+        setTimeout(() => {
+            popup.classList.add('hidden');
+            popup.classList.remove('opacity-0');
+            
+            // 【重要】ここでゲーム側のBGM再生やチュートリアル開始処理を呼ぶとスムーズです
+            // 例: startTutorial();
+            
+        }, 300);
+    }
     </script>
+        <!-- 
+        =========================================
+        初回起動時ポップアップ (Intro Popup)
+        =========================================
+    -->
+    <div id="intro-popup" class="absolute inset-0 z-[60] flex items-center justify-center bg-black/20 backdrop-blur-sm transition-opacity duration-300 hidden touch-none">
+        <!-- ポップアップ本体 -->
+        <div class="bg-white w-11/12 max-w-sm rounded-xl shadow-lg border border-gray-200 overflow-hidden transform transition-all pointer-events-auto">
+            
+            <div class="p-6">
+                <!-- タイトル -->
+                    <h2 class="text-lg font-bold text-gray-800 text-center mb-4 tracking-wide">
+                        『既読スルー・プロット』へ<br>ようこそ！
+                    </h2>
+                    
+                    <!-- 本文エリア -->
+                    <div class="text-gray-600 text-sm leading-relaxed space-y-4">
+                        
+                        <p class="text-xs">
+                            プレイしていただき、誠にありがとうございます！<br>
+                            本作は「思考力を養う」をテーマに制作されました。
+                        </p>
+                        
+                        <!-- 目立たせる推奨アクション部分 -->
+                        <div class="bg-blue-50 p-3.5 rounded-lg border border-blue-100">
+                            <p class="font-bold text-blue-800 mb-2">🔰 初めてプレイされる方へ</p>
+                            <ul class="list-disc list-outside space-y-2 ml-4 text-blue-900 text-xs">
+                                <li>画面下部の<span class="font-bold">「チュートリアル」</span>で、まずは基本操作を体験！</li>
+                                <li>詳しいルールやカード効果は、上部の緑ボタン<span class="font-bold">「公式ガイド」</span>をチェック！</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 注意書き（文字を少し小さくしてメリハリをつける） -->
+                        <div class="text-[10px] text-gray-500 space-y-1.5 pt-1">
+                            <p>※ご意見・不具合報告は、X(旧Twitter)や報告フォームまでお気軽にお寄せください。</p>
+                            <p class="text-red-500 font-bold">※この案内は一度閉じると再表示されません。必要に応じてスクリーンショットをお願いします。</p>
+                        </div>
+                        
+                    </div>
+            </div>
+    
+            <div class="px-6 pb-6 pt-2">
+                    <button onclick="closeIntroPopup()" class="w-full bg-white hover:bg-gray-50 text-gray-800 font-bold py-3 px-4 rounded-lg border border-gray-300 shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-200">
+                        ホーム画面へ進む
+                    </button>
+            </div>
+            
+        </div>
+    </div>
 </body>
 </html>
