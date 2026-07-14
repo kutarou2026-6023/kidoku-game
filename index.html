@@ -1218,7 +1218,7 @@
 
         function openPatchNotesModal() {
             document.getElementById('patch-notes-modal').classList.remove('hidden');
-            selectVersion('v131'); 
+            selectVersion('v132'); 
         }
 
         function closePatchNotesModal() {
@@ -1226,7 +1226,7 @@
         }
 
         function selectVersion(versionId) {
-            ['v131', 'v130'].forEach(v => {
+            ['v132', 'v100'].forEach(v => {
                 const btn = document.getElementById(`vbtn-${v}`);
                 if (btn) {
                     if (v === versionId) {
